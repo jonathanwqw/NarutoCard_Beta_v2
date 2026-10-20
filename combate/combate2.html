@@ -7,21 +7,33 @@
     <link rel="stylesheet" href="combate2.css">
 </head>
 <body>
+    <!-- Banner de anúncio de turno -->
+    <div id="turn-banner" class="turn-banner hidden"></div>
+
+    <!-- Efeito de screen flash -->
+    <div id="screen-flash" class="screen-flash"></div>
+
     <div id="game-area" class="game-section active-section">
         <div id="game-container">
-            <h1>Naruto Pixel Card Game - Módulo de Combate</h1>
-            
-            <div id="battle-status-container"> 
+            <div id="game-header">
+                <h1>Naruto Card - Combate</h1>
+                <div class="header-controls">
+                    <button id="sound-toggle" class="icon-button" title="Ligar/Desligar som">🔊</button>
+                    <a href="../index.html" class="icon-button" title="Voltar ao menu">🏠</a>
+                </div>
+            </div>
+
+            <div id="battle-status-container">
                 <!-- Coluna do Jogador -->
                 <div id="player-status-side" class="status-side">
                     <h2>Jogador</h2>
-                    
+
                     <div class="stats-display">
                         <div class="bar-container health-bar" data-label="Vida">
                             <div id="player-health-bar-fill" class="bar-fill"></div>
                         </div>
                         <div id="player-health-feedback" class="feedback-container"></div>
-                        
+
                         <div class="bar-container chakra-bar" data-label="Chakra">
                             <div id="player-chakra-bar-fill" class="bar-fill"></div>
                         </div>
@@ -40,12 +52,16 @@
                         <div id="player-hand" class="hand-area"><p>Mão Jogador</p></div>
                         <button class="scroll-arrow right-arrow" data-target="player-hand">&gt;</button>
                     </div>
+                    <div class="deck-info">
+                        <span id="player-deck-count">Deck: 0</span>
+                        <span id="player-discard-count">Descarte: 0</span>
+                    </div>
                 </div>
 
                 <!-- Coluna do Oponente -->
                 <div id="opponent-status-side" class="status-side">
-                    <h2>Oponente</h2>
-                    
+                    <h2 id="opponent-name-display">Oponente</h2>
+
                      <div class="stats-display">
                         <div class="bar-container health-bar" data-label="Vida">
                             <div id="opponent-health-bar-fill" class="bar-fill"></div>
@@ -70,14 +86,23 @@
                         <div id="opponent-hand" class="hand-area"><p>Mão Oponente</p></div>
                         <button class="scroll-arrow right-arrow" data-target="opponent-hand">&gt;</button>
                     </div>
+                    <div class="deck-info">
+                        <span id="opponent-deck-count">Deck: 0</span>
+                        <span id="opponent-discard-count">Descarte: 0</span>
+                    </div>
                 </div>
             </div>
 
             <div id="game-board">
-                <p>Turno: <span id="turn-counter">1</span></p>
+                <div class="turn-indicator">
+                    Turno <span id="turn-counter">1</span>
+                    <span id="phase-label" class="phase-label">Sua Vez</span>
+                </div>
                 <div id="message-log">Log da Batalha:</div>
-                <button id="end-turn-button" class="game-button">Finalizar Turno</button>
-                <button id="restart-battle-button" class="game-button">Reiniciar Batalha</button>
+                <div class="game-buttons">
+                    <button id="end-turn-button" class="game-button primary">Finalizar Turno</button>
+                    <button id="restart-battle-button" class="game-button secondary">Reiniciar Batalha</button>
+                </div>
             </div>
         </div>
     </div>
@@ -101,6 +126,7 @@
         </div>
     </div>
 
+    <script src="audio.js"></script>
     <script src="combate2.js"></script>
 </body>
 </html>

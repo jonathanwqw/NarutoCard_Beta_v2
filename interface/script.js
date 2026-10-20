@@ -3,6 +3,33 @@
 document.addEventListener("DOMContentLoaded", () => {
     console.log("Jogo Naruto Pixel Card Game iniciado e DOM carregado!");
 
+    // Inicializa áudio
+    document.addEventListener("click", () => { gameAudio.init(); gameAudio.resume(); }, { once: true });
+
+    // Atalho de sons
+    function sfx(name) {
+        if (!gameAudio.initialized) return;
+        const map = {
+            hit: () => gameAudio.playHit(),
+            crit: () => gameAudio.playCrit(),
+            heal: () => gameAudio.playHeal(),
+            shield: () => gameAudio.playShield(),
+            card: () => gameAudio.playCard(),
+            error: () => gameAudio.playError(),
+            draw: () => gameAudio.playDraw(),
+            turn: () => gameAudio.playTurnStart(),
+            stun: () => gameAudio.playStun(),
+            burn: () => gameAudio.playBurn(),
+            poison: () => gameAudio.playPoison(),
+            chakra: () => gameAudio.playChakra(),
+            victory: () => gameAudio.playVictory(),
+            defeat: () => gameAudio.playDefeat(),
+            summon: () => gameAudio.playSummon(),
+            discard: () => gameAudio.playDiscard()
+        };
+        if (map[name]) map[name]();
+    }
+
     // --- Variáveis Globais ---
     let shoppingCart = []; // Array para armazenar IDs das cartas no carrinho
 
@@ -762,6 +789,7 @@ document.addEventListener("DOMContentLoaded", () => {
         updatePlayerProfileUI();
         updateShopCurrencyDisplay();
         logMessage("Compra finalizada com sucesso!");
+        sfx("chakra");
         initializePlayerDeck(); // Atualiza o deck caso novas cartas sejam compradas
     }
 
@@ -863,6 +891,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             targetSlotType[slotName] = cardId;
             logMessage(`${cardData.name} equipado no slot ${slotName}.`);
+            sfx("shield");
             applyEquipmentEffects();
             displayEquipment(); // Refresh UI
             updatePlayerStatsUI(); // Atualiza stats de combate
@@ -1004,6 +1033,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         }
                         playerProfile.cardCollection["item006"].quantity += 2;
                         logMessage("Você criou 2x Bandagem!");
+                        sfx("heal");
                         displayCrafting(); // Refresh UI
                         initializePlayerDeck();
                     } else {
@@ -1059,6 +1089,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                     playerProfile.cardCollection[rewardCardId].quantity++;
                     logMessage(`Você abriu um Baú Comum e encontrou: ${rewardCardData.name}!`);
+                    sfx("draw");
                     displayChests(); // Refresh UI
                     initializePlayerDeck();
                 } else {
@@ -1195,11 +1226,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (battleState.player.chakra < cardInstance.cost) {
             logMessage("Chakra insuficiente para jogar esta carta.");
+            sfx("error");
             return;
         }
 
         battleState.player.chakra -= cardInstance.cost;
         logMessage(`Jogador usou ${cardInstance.name}.`);
+        sfx("card");
         applyCardEffect(cardInstance, "player", "opponent"); 
 
         // Mover carta da mão para o descarte
@@ -1254,6 +1287,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (cardInstance.effect === "ignore_defense") {
                 finalDamage = finalAttack;
                 logMessage("Ataque ignorou a defesa!");
+                sfx("crit"); // som especial para ignora-defesa
             } else if (cardInstance.effect === "ignore_defense_value") {
                 defenseToConsider = Math.max(0, defenseToConsider - cardInstance.effectValue);
                 damageReduction = defenseToConsider;
@@ -1272,7 +1306,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             target.health -= finalDamage;
             damageDealt = finalDamage;
-            logMessage(`${cardInstance.name} causou ${finalDamage} de dano em ${targetType === "player" ? "Jogador" : "Oponente"}.`);
+            logMessage(`${finalDamage} de dano causado em ${targetType === "player" ? "Jogador" : "Oponente"}.`);
+            sfx(isCrit ? "crit" : "hit");
+            if (isCrit) logMessage("★ ACERTO CRÍTICO! ★");
         }
 
         // Aplica outros efeitos da carta
@@ -1281,13 +1317,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 case "heal":
                     caster.health = Math.min(caster.maxHealth, caster.health + cardInstance.effectValue);
                     logMessage(`${casterType === "player" ? "Jogador" : "Oponente"} recuperou ${cardInstance.effectValue} de Vida.`);
+                    sfx("heal");
                     break;
                 case "recover_chakra":
                     caster.chakra = Math.min(caster.maxChakra, caster.chakra + cardInstance.effectValue);
                     logMessage(`${casterType === "player" ? "Jogador" : "Oponente"} recuperou ${cardInstance.effectValue} de Chakra.`);
+                    sfx("chakra");
                     break;
                 case "draw_card":
                     logMessage(`${casterType === "player" ? "Jogador" : "Oponente"} comprou ${cardInstance.effectValue} carta(s).`);
+                    sfx("draw");
                     drawCards(casterType, cardInstance.effectValue);
                     break;
                 case "buff_next_taijutsu":
@@ -1303,9 +1342,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 case "burn":
                 case "poison":
                     addStatusEffect(target, cardInstance.name, "dot", cardInstance.effect, cardInstance.effectValue, cardInstance.duration, cardInstance.id);
+                    sfx(cardInstance.effect === "burn" ? "burn" : "poison");
                     break;
                 case "summon_dot": // Para invocações que causam dano por turno
                     addStatusEffect(target, cardInstance.name, "summon_dot", cardInstance.effect, cardInstance.summonDotDamage, cardInstance.duration, cardInstance.id);
+                    sfx("summon");
                     break;
                 case "block_all_damage":
                     addStatusEffect(caster, cardInstance.name, "buff", cardInstance.effect, 1, cardInstance.duration, cardInstance.id);
@@ -1316,12 +1357,14 @@ document.addEventListener("DOMContentLoaded", () => {
                         const discardedCard = target.hand.splice(discardedIndex, 1)[0];
                         target.discardPile.push(discardedCard.id);
                         logMessage(`${targetType === "player" ? "Jogador" : "Oponente"} descartou ${discardedCard.name}.`);
+                        sfx("discard");
                         if (targetType === "player") updateHandUI("player"); else updateHandUI("opponent");
                     }
                     break;
                 case "self_damage":
                     caster.health -= cardInstance.effectValue;
                     logMessage(`${casterType === "player" ? "Jogador" : "Oponente"} sofreu ${cardInstance.effectValue} de dano colateral.`);
+                    sfx("hit");
                     break;
                 case "stat_boost_regen":
                 case "stat_boost_self_dmg":
@@ -1331,10 +1374,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     break;
                 case "stun":
                     addStatusEffect(target, cardInstance.name, "stun", cardInstance.effect, 1, cardInstance.duration, cardInstance.id);
+                    sfx("stun");
+                    logMessage(`${targetType === "player" ? "Jogador" : "Oponente"} foi ATORDOADO!`);
                     break;
                 case "remove_debuffs":
                     caster.statusEffects = caster.statusEffects.filter(se => se.type === "buff" || (se.type === "dot" && se.sourcePlayer === casterType)); // Remove debuffs e DoTs inimigos
                     logMessage(`${casterType === "player" ? "Jogador" : "Oponente"} removeu efeitos negativos.`);
+                    sfx("heal");
                     break;
                 case "reduce_next_enemy_attack_percent": // Bomba de Fumaça
                     addStatusEffect(target, cardInstance.name, "debuff", cardInstance.effect, cardInstance.effectValue, cardInstance.duration, cardInstance.id, { sourcePlayer: casterType });
@@ -1547,11 +1593,13 @@ document.addEventListener("DOMContentLoaded", () => {
             logMessage("Jogador foi derrotado! Fim de jogo.");
             battleState.gamePhase = "game_over";
             endTurnButton.disabled = true;
+            sfx("defeat");
             addRestartButton();
             return true;
         }
         if (battleState.opponent.health <= 0) {
             logMessage("Oponente foi derrotado! Você venceu!");
+            sfx("victory");
             playerProfile.currency += 50; // Recompensa por vitória
             playerProfile.xp += 100;
             checkPlayerLevelUp();

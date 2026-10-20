@@ -1,25 +1,41 @@
-// Naruto Pixel Card Game - Módulo de Combate
+// Naruto Pixel Card Game - Módulo de Combate v3
+// Sons + Animações + IA Melhorada + Jogabilidade Aprimorada
 
 document.addEventListener("DOMContentLoaded", () => {
-    console.log("Módulo de Combate - Naruto Pixel Card Game iniciado!");
+    console.log("Módulo de Combate - Naruto Pixel Card Game v3 iniciado!");
 
-    // --- Áudio Elements ---
-    let ambientSound = null;
-    let victorySound = null;
-    let defeatSound = null;
+    let ambientSoundActive = false;
     let battleStartTime = 0;
 
-    // --- Lista de Rivais ---
     const rivalNames = [
-        "Sasuke Uchiha", "Gaara", "Neji Hyuga", "Rock Lee", "Orochimaru", 
+        "Sasuke Uchiha", "Gaara", "Neji Hyuga", "Rock Lee", "Orochimaru",
         "Kabuto Yakushi", "Kimimaro", "Zabuza Momochi", "Haku", "Itachi Uchiha",
         "Kisame Hoshigaki", "Deidara", "Sasori", "Pain (Tendo)", "Konan"
     ];
     let currentRivalName = "Oponente Desconhecido";
 
+    // --- Sistema de Elementos (vantagem/desvantagem) ---
+    const elementChart = {
+        "Fogo":   { strong: "Vento",  weak: "Água" },
+        "Água":   { strong: "Fogo",   weak: "Terra" },
+        "Vento":  { strong: "Terra",  weak: "Raio"  },
+        "Terra":  { strong: "Raio",   weak: "Vento" },
+        "Raio":   { strong: "Água",   weak: "Terra" },
+        "Nenhum": { strong: null,     weak: null    }
+    };
+
+    function getElementMultiplier(attackerElement, defenderElement) {
+        if (!attackerElement || attackerElement === "Nenhum") return { mult: 1, label: "" };
+        const chart = elementChart[attackerElement];
+        if (!chart) return { mult: 1, label: "" };
+        if (chart.strong === defenderElement) return { mult: 1.25, label: " VANTAGEM ELEMENTAL!" };
+        if (chart.weak === defenderElement) return { mult: 0.75, label: " desvantagem elemental..." };
+        return { mult: 1, label: "" };
+    }
+
     // --- Definição da Estrutura das Cartas ---
     class Card {
-        constructor(id, name, type, cost, description, image, attack = 0, defenseBuff = 0, effect = null, duration = 0, critChance = 0, effectValue = 0, defensePercent = 0, summonDotDamage = 0) {
+        constructor(id, name, type, cost, description, image, attack = 0, defenseBuff = 0, effect = null, duration = 0, critChance = 0, effectValue = 0, defensePercent = 0, summonDotDamage = 0, element = "Nenhum") {
             this.id = id;
             this.name = name;
             this.type = type;
@@ -27,13 +43,14 @@ document.addEventListener("DOMContentLoaded", () => {
             this.description = description;
             this.image = image;
             this.attack = attack;
-            this.defenseBuff = defenseBuff; // Para ganho direto na barra de defesa
-            this.defensePercent = defensePercent; // Para status effect de % de defesa
+            this.defenseBuff = defenseBuff;
+            this.defensePercent = defensePercent;
             this.effect = effect;
             this.duration = duration;
             this.critChance = critChance;
             this.effectValue = effectValue;
             this.summonDotDamage = summonDotDamage;
+            this.element = element;
             this.level = 1;
             this.xp = 0;
         }
@@ -47,63 +64,58 @@ document.addEventListener("DOMContentLoaded", () => {
             let imagePlaceholder = this.type.substring(0, 3).toUpperCase();
             if (this.type === "Jutsu") imagePlaceholder = "JUT";
             if (this.type === "Taijutsu") imagePlaceholder = "TAI";
-            if (this.type === "Defesa") imagePlaceholder = "DEF"; // Usado para cartas que dão defenseBuff
+            if (this.type === "Defesa") imagePlaceholder = "DEF";
             if (this.type === "Item") imagePlaceholder = "ITM";
             if (this.type === "Buff") imagePlaceholder = "BUF";
             if (this.type === "Debuff") imagePlaceholder = "DEB";
             if (this.type === "Invocação") imagePlaceholder = "INV";
             if (this.type === "Modo") imagePlaceholder = "MOD";
 
-            const currentAttack = this.attack;
-            const currentDefenseBuff = this.defenseBuff; // Defesa direta da carta
-            const currentDefensePercent = this.defensePercent > 0 ? Math.round(this.defensePercent * 100) : 0; // % Defesa como status
-            const currentSummonDot = this.summonDotDamage;
-
             let statsHTML = "";
-            if (currentAttack > 0) {
-                statsHTML += `<span>Atk: ${currentAttack}${this.critChance > 0 ? ` (${Math.round(this.critChance * 100)}%C)` : ""}</span>`;
+            if (this.attack > 0) {
+                statsHTML += `<span>Atk: ${this.attack}${this.critChance > 0 ? ` (${Math.round(this.critChance * 100)}%C)` : ""}</span>`;
             }
-            if (currentDefenseBuff > 0) { // Mostra o ganho de defesa da carta
-                statsHTML += `<span>Def: +${currentDefenseBuff}</span>`;
-            }
-            if (currentDefensePercent > 0) { // Mostra o buff de % de defesa
-                statsHTML += `<span>Def%: ${currentDefensePercent}% (${this.duration}t)</span>`;
-            }
-            if (currentSummonDot > 0) {
-                statsHTML += `<span>DoT: ${currentSummonDot}/${this.duration}t</span>`;
-            }
+            if (this.defenseBuff > 0) statsHTML += `<span>Def: +${this.defenseBuff}</span>`;
+            if (this.defensePercent > 0) statsHTML += `<span>Def%: ${Math.round(this.defensePercent * 100)}% (${this.duration}t)</span>`;
+            if (this.summonDotDamage > 0) statsHTML += `<span>DoT: ${this.summonDotDamage}/${this.duration}t</span>`;
             if (statsHTML === "") statsHTML = "<span></span>";
+
+            const elementBadge = this.element && this.element !== "Nenhum"
+                ? `<span class="card-element">${this.element}</span>` : "";
 
             cardElement.innerHTML = `
                 <div class="card-name">${this.name}</div>
                 <div class="card-cost">${this.cost > 0 ? this.cost : ""}</div>
-                <div class="card-image-placeholder">${imagePlaceholder}</div>
+                <div class="card-image-placeholder">${imagePlaceholder}${elementBadge}</div>
                 <div class="card-type">${this.type}</div>
                 <div class="card-desc">${this.description}</div>
-                <div class="card-stats">
-                    ${statsHTML}
-                </div>
+                <div class="card-stats">${statsHTML}</div>
             `;
             return cardElement;
         }
     }
 
     const cardDatabase = {
-        "jutsu001": { name: "Rasengan", type: "Jutsu", cost: 30, description: "Causa 40 de dano.", attack: 40 },
-        "jutsu002": { name: "Chidori", type: "Jutsu", cost: 35, description: "Causa 45 de dano. Crítico: 15%", attack: 45, critChance: 0.15 },
+        "jutsu001": { name: "Rasengan", type: "Jutsu", cost: 30, description: "Causa 40 de dano de Vento.", attack: 40, element: "Vento" },
+        "jutsu002": { name: "Chidori", type: "Jutsu", cost: 35, description: "Causa 45 de dano de Raio. Crítico: 15%", attack: 45, critChance: 0.15, element: "Raio" },
         "jutsu003": { name: "Kage Bunshin", type: "Jutsu", cost: 20, description: "Compra 1 carta.", effect: "draw_card", effectValue: 1 },
-        "taijutsu001": { name: "Chute Dinâmico", type: "Taijutsu", cost: 10, description: "Causa 20 de dano.", attack: 20 },
-        "defesa001": { name: "Escudo de Terra", type: "Defesa", cost: 15, description: "Ganha 25 de Defesa.", defenseBuff: 25 }, // Carta de defesa direta
-        "jutsu006": { name: "Parede de Lama", type: "Buff", cost: 20, description: "Ganha 30% de Redução de Dano por 2 turnos.", defensePercent: 0.30, duration: 2, effect: "apply_defense_percent_buff" }, // Buff de % Defesa
-        "jutsu008": { name: "Amaterasu", type: "Jutsu", cost: 55, description: "Causa 30 de dano por 3 turnos.", effect: "burn", effectValue: 30, duration: 3 },
+        "jutsu004": { name: "Bola de Fogo", type: "Jutsu", cost: 25, description: "Causa 35 de dano de Fogo.", attack: 35, element: "Fogo" },
+        "taijutsu001": { name: "Chute Dinâmico", type: "Taijutsu", cost: 10, description: "Causa 20 de dano físico.", attack: 20 },
+        "taijutsu002": { name: "Rajada Leões", type: "Taijutsu", cost: 15, description: "Causa 25 de dano físico.", attack: 25 },
+        "defesa001": { name: "Escudo de Terra", type: "Defesa", cost: 15, description: "Ganha 25 de Defesa.", defenseBuff: 25 },
+        "jutsu006": { name: "Parede de Lama", type: "Buff", cost: 20, description: "Ganha 30% de Redução de Dano por 2 turnos.", defensePercent: 0.30, duration: 2, effect: "apply_defense_percent_buff" },
+        "jutsu008": { name: "Amaterasu", type: "Jutsu", cost: 55, description: "Causa 30 de dano por 3 turnos.", effect: "burn", effectValue: 30, duration: 3, element: "Fogo" },
+        "jutsu005": { name: "Dragão de Água", type: "Jutsu", cost: 40, description: "Causa 50 de dano de Água.", attack: 50, element: "Água" },
         "invoc001": { name: "Invocação: Sapo", type: "Invocação", cost: 30, description: "Causa 15 dano/turno por 3 turnos.", effect: "summon_dot", summonDotDamage: 15, duration: 3 },
         "jutsu012": { name: "Jutsu Médico", type: "Jutsu", cost: 25, description: "Recupera 40 de Vida.", effect: "heal", effectValue: 40 },
         "item001": { name: "Kunai", type: "Item", cost: 5, description: "Causa 10 de dano.", attack: 10 },
         "item002": { name: "Pílula Soldado", type: "Item", cost: 10, description: "Recupera 15 Chakra.", effect: "recover_chakra", effectValue: 15 },
+        "item003": { name: "Shuriken", type: "Item", cost: 8, description: "Causa 12 de dano.", attack: 12 },
         "buff001": { name: "Força Interior", type: "Buff", cost: 20, description: "+10 Atk próximo Taijutsu.", effect: "buff_next_taijutsu", duration: 1, effectValue: 10 },
-        "debuff001": { name: "Redução de Defesa Oponente", type: "Debuff", cost: 15, description: "Reduz Defesa% do oponente em 20% por 2t.", effect: "reduce_opponent_defense_percent", effectValue: 0.20, duration: 2 }, // Exemplo de debuff de defesa
+        "debuff001": { name: "Redução de Defesa", type: "Debuff", cost: 15, description: "Reduz Defesa% do oponente em 20% por 2t.", effect: "reduce_opponent_defense_percent", effectValue: 0.20, duration: 2 },
         "mode001": { name: "Modo Sábio (Sapo)", type: "Modo", cost: 50, description: "+20 Atk, +10 Chakra Regen por 3t.", effect: "stat_boost_regen", boost: { attack: 20 }, regen: { chakra: 10 }, duration: 3 },
         "jutsu018": { name: "Tsukuyomi", type: "Jutsu", cost: 75, description: "Atordoa oponente por 1 turno. Causa 20 dano.", effect: "stun", duration: 1, attack: 20 },
+        "jutsu019": { name: "Chidori Senbon", type: "Jutsu", cost: 25, description: "Causa 30 de dano de Raio.", attack: 30, element: "Raio" },
     };
 
     const battleState = {
@@ -111,73 +123,69 @@ document.addEventListener("DOMContentLoaded", () => {
         currentPlayer: "player",
         gamePhase: "setup",
         player: {
-            health: 500, maxHealth: 500, chakra: 50, maxChakra: 380, defense: 0, maxDefense: 50, 
-            attackBoost: 0, critChanceBoost: 0, statusEffects: [], deck: [], hand: [], discardPile: [], 
-            canPlayCard: true, isStunned: false, cardBoughtThisTurn: false,
+            health: 500, maxHealth: 500, chakra: 50, maxChakra: 380, defense: 0, maxDefense: 50,
+            attackBoost: 0, critChanceBoost: 0, statusEffects: [], deck: [], hand: [], discardPile: [],
+            canPlayCard: true, isStunned: false,
             healthBarFill: null, chakraBarFill: null, defenseBarFill: null,
-            healthBarText: null, chakraBarText: null, defenseBarText: null, 
+            healthBarText: null, chakraBarText: null, defenseBarText: null,
             healthFeedback: null, chakraFeedback: null, defenseFeedback: null,
-            statusEffectsDisplay: null, tempStatsDisplay: null, handElement: null
+            statusEffectsDisplay: null, tempStatsDisplay: null, handElement: null,
+            sideElement: null
         },
         opponent: {
-            health: 500, maxHealth: 500, chakra: 50, maxChakra: 380, defense: 0, maxDefense: 50, 
-            attackBoost: 0, critChanceBoost: 0, statusEffects: [], deck: [], hand: [], discardPile: [], 
-            canPlayCard: true, isStunned: false, cardBoughtThisTurn: false,
+            health: 500, maxHealth: 500, chakra: 50, maxChakra: 380, defense: 0, maxDefense: 50,
+            attackBoost: 0, critChanceBoost: 0, statusEffects: [], deck: [], hand: [], discardPile: [],
+            canPlayCard: true, isStunned: false,
             healthBarFill: null, chakraBarFill: null, defenseBarFill: null,
-            healthBarText: null, chakraBarText: null, defenseBarText: null, 
+            healthBarText: null, chakraBarText: null, defenseBarText: null,
             healthFeedback: null, chakraFeedback: null, defenseFeedback: null,
-            statusEffectsDisplay: null, tempStatsDisplay: null, handElement: null
+            statusEffectsDisplay: null, tempStatsDisplay: null, handElement: null,
+            sideElement: null
         }
     };
 
     // --- Elementos da UI ---
     function cacheUIElements() {
-        // Player UI Elements
-        battleState.player.healthBarFill = document.getElementById("player-health-bar-fill");
-        battleState.player.chakraBarFill = document.getElementById("player-chakra-bar-fill");
-        battleState.player.defenseBarFill = document.getElementById("player-defense-bar-fill");
-
-        battleState.player.healthBarText = createBarTextElement(battleState.player.healthBarFill);
-        battleState.player.chakraBarText = createBarTextElement(battleState.player.chakraBarFill);
-        battleState.player.defenseBarText = createBarTextElement(battleState.player.defenseBarFill);
-
-        battleState.player.healthFeedback = document.getElementById("player-health-feedback");
-        battleState.player.chakraFeedback = document.getElementById("player-chakra-feedback");
-        battleState.player.defenseFeedback = document.getElementById("player-defense-feedback");
-        battleState.player.statusEffectsDisplay = document.getElementById("player-status-effects");
-        battleState.player.tempStatsDisplay = document.getElementById("player-temp-stats");
-        battleState.player.handElement = document.getElementById("player-hand");
-
-        // Opponent UI Elements
-        battleState.opponent.healthBarFill = document.getElementById("opponent-health-bar-fill");
-        battleState.opponent.chakraBarFill = document.getElementById("opponent-chakra-bar-fill");
-        battleState.opponent.defenseBarFill = document.getElementById("opponent-defense-bar-fill");
-
-        battleState.opponent.healthBarText = createBarTextElement(battleState.opponent.healthBarFill);
-        battleState.opponent.chakraBarText = createBarTextElement(battleState.opponent.chakraBarFill);
-        battleState.opponent.defenseBarText = createBarTextElement(battleState.opponent.defenseBarFill);
-
-        battleState.opponent.healthFeedback = document.getElementById("opponent-health-feedback");
-        battleState.opponent.chakraFeedback = document.getElementById("opponent-chakra-feedback");
-        battleState.opponent.defenseFeedback = document.getElementById("opponent-defense-feedback");
-        battleState.opponent.statusEffectsDisplay = document.getElementById("opponent-status-effects");
-        battleState.opponent.tempStatsDisplay = document.getElementById("opponent-temp-stats");
-        battleState.opponent.handElement = document.getElementById("opponent-hand");
+        ["player", "opponent"].forEach(key => {
+            const t = battleState[key];
+            t.healthBarFill = document.getElementById(`${key}-health-bar-fill`);
+            t.chakraBarFill = document.getElementById(`${key}-chakra-bar-fill`);
+            t.defenseBarFill = document.getElementById(`${key}-defense-bar-fill`);
+            t.healthBarText = createBarTextElement(t.healthBarFill);
+            t.chakraBarText = createBarTextElement(t.chakraBarFill);
+            t.defenseBarText = createBarTextElement(t.defenseBarFill);
+            t.healthFeedback = document.getElementById(`${key}-health-feedback`);
+            t.chakraFeedback = document.getElementById(`${key}-chakra-feedback`);
+            t.defenseFeedback = document.getElementById(`${key}-defense-feedback`);
+            t.statusEffectsDisplay = document.getElementById(`${key}-status-effects`);
+            t.tempStatsDisplay = document.getElementById(`${key}-temp-stats`);
+            t.handElement = document.getElementById(`${key}-hand`);
+            t.sideElement = document.getElementById(`${key}-status-side`);
+        });
     }
-    cacheUIElements(); // Chamar para popular os elementos no battleState
+    cacheUIElements();
 
     function createBarTextElement(barFillElement) {
         const textElement = document.createElement("div");
         textElement.classList.add("bar-text");
-        textElement.textContent = "0"; // Initial value
+        textElement.textContent = "0";
         barFillElement.appendChild(textElement);
         return textElement;
     }
 
     const turnCounterDisplay = document.getElementById("turn-counter");
+    const phaseLabel = document.getElementById("phase-label");
     const messageLogElement = document.getElementById("message-log");
     const endTurnButton = document.getElementById("end-turn-button");
     const restartBattleButton = document.getElementById("restart-battle-button");
+    const soundToggleBtn = document.getElementById("sound-toggle");
+    const turnBanner = document.getElementById("turn-banner");
+    const screenFlash = document.getElementById("screen-flash");
+    const opponentNameDisplay = document.getElementById("opponent-name-display");
+    const playerDeckCount = document.getElementById("player-deck-count");
+    const playerDiscardCount = document.getElementById("player-discard-count");
+    const opponentDeckCount = document.getElementById("opponent-deck-count");
+    const opponentDiscardCount = document.getElementById("opponent-discard-count");
 
     const battleResultsScreen = document.getElementById("battle-results-screen");
     const rivalNameDisplay = document.getElementById("rival-name-display");
@@ -189,64 +197,65 @@ document.addEventListener("DOMContentLoaded", () => {
     const closeResultsButton = document.getElementById("close-results-button");
     const nextLevelButton = document.getElementById("next-level-button");
 
-    // --- Função para inicializar o scroll da mão ---
-    function initializeHandScrolling() {
-        const scrollArrows = document.querySelectorAll(".scroll-arrow");
-        scrollArrows.forEach(arrow => {
-            arrow.addEventListener("click", () => {
-                const targetHandId = arrow.dataset.target;
-                const handArea = document.getElementById(targetHandId);
-                if (handArea) {
-                    // Mede a carta real em vez de usar valor fixo
-                    const cardEl = handArea.querySelector(".card");
-                    const cardWidth = cardEl ? cardEl.getBoundingClientRect().width : 72;
-                    const styles = getComputedStyle(handArea);
-                    const cardGap = parseFloat(styles.gap) || 6;
-                    const scrollAmount = (cardWidth + cardGap) * 2; // Rola 2 cartas
+    // --- Botão de Som ---
+    if (soundToggleBtn) {
+        soundToggleBtn.addEventListener("click", () => {
+            gameAudio.init();
+            const enabled = gameAudio.toggle();
+            soundToggleBtn.textContent = enabled ? "🔊" : "🔇";
+        });
+    }
 
-                    if (arrow.classList.contains("left-arrow")) {
-                        handArea.scrollBy({ left: -scrollAmount, behavior: "smooth" });
-                    } else if (arrow.classList.contains("right-arrow")) {
-                        handArea.scrollBy({ left: scrollAmount, behavior: "smooth" });
-                    }
-                }
+    // Inicializa áudio no primeiro clique (requisito dos navegadores)
+    document.addEventListener("click", () => {
+        gameAudio.init();
+        gameAudio.resume();
+    }, { once: true });
+
+    // --- Scroll da mão ---
+    function initializeHandScrolling() {
+        document.querySelectorAll(".scroll-arrow").forEach(arrow => {
+            arrow.addEventListener("click", () => {
+                const handArea = document.getElementById(arrow.dataset.target);
+                if (!handArea) return;
+                const cardEl = handArea.querySelector(".card");
+                const cardWidth = cardEl ? cardEl.getBoundingClientRect().width : 72;
+                const gap = parseFloat(getComputedStyle(handArea).gap) || 6;
+                const amount = (cardWidth + gap) * 2;
+                handArea.scrollBy({ left: arrow.classList.contains("left-arrow") ? -amount : amount, behavior: "smooth" });
             });
         });
     }
-    initializeHandScrolling(); // Chamar a função de inicialização
-    startChakraRegeneration(); // Iniciar a regeneração de chakra
+    initializeHandScrolling();
 
-    // --- Função para regeneração de Chakra ---
+    // --- Chakra regeneração ---
     function startChakraRegeneration() {
         setInterval(() => {
-            if (battleState.gamePhase !== "battle-over") { // Só regenera se a batalha não acabou
-                // Regenera Chakra do Jogador
-                if (battleState.player.chakra < battleState.player.maxChakra) {
-                    battleState.player.chakra = Math.min(battleState.player.chakra + 5, battleState.player.maxChakra);
-                    // logMessage(`Jogador regenerou 5 de chakra. Total: ${battleState.player.chakra}`); // Opcional: log
+            if (battleState.gamePhase === "game_over" || battleState.gamePhase === "results_screen") return;
+            ["player", "opponent"].forEach(key => {
+                const t = battleState[key];
+                if (t.chakra < t.maxChakra) {
+                    t.chakra = Math.min(t.chakra + 5, t.maxChakra);
                 }
-                // Regenera Chakra do Oponente
-                if (battleState.opponent.chakra < battleState.opponent.maxChakra) {
-                    battleState.opponent.chakra = Math.min(battleState.opponent.chakra + 5, battleState.opponent.maxChakra);
-                    // logMessage(`Oponente regenerou 5 de chakra. Total: ${battleState.opponent.chakra}`); // Opcional: log
-                }
-                updatePlayerStatsUI();
-                updateOpponentStatsUI();
-            }
-        }, 3000); // Regenera a cada 3 segundos
+            });
+            updatePlayerStatsUI();
+            updateOpponentStatsUI();
+        }, 3000);
     }
+    startChakraRegeneration();
 
     // --- Funções Auxiliares ---
-    function logMessage(message) {
+    function logMessage(message, cssClass = "") {
         console.log(message);
-        const messageElement = document.createElement("p");
-        messageElement.textContent = message;
+        const el = document.createElement("p");
+        el.textContent = message;
+        if (cssClass) el.classList.add(cssClass);
         if (messageLogElement.children.length > 0 && messageLogElement.firstChild.tagName === "P") {
-             messageLogElement.insertBefore(messageElement, messageLogElement.children[0]); // Insere no topo
+            messageLogElement.insertBefore(el, messageLogElement.children[0]);
         } else {
-             messageLogElement.appendChild(messageElement);
+            messageLogElement.appendChild(el);
         }
-        while (messageLogElement.children.length > 50) { 
+        while (messageLogElement.children.length > 50) {
             messageLogElement.removeChild(messageLogElement.lastChild);
         }
     }
@@ -259,78 +268,152 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function createCardInstance(cardId) {
-        const cardData = cardDatabase[cardId];
-        if (!cardData) {
-            console.error(`Dados não encontrados para a carta ID: ${cardId}`);
-            return null;
-        }
-        return new Card(
-            cardId, cardData.name, cardData.type, cardData.cost, cardData.description, cardData.image,
-            cardData.attack, cardData.defenseBuff, cardData.effect, cardData.duration, cardData.critChance,
-            cardData.effectValue, cardData.defensePercent, cardData.summonDotDamage
-        );
+        const d = cardDatabase[cardId];
+        if (!d) return null;
+        return new Card(cardId, d.name, d.type, d.cost, d.description, d.image,
+            d.attack, d.defenseBuff, d.effect, d.duration, d.critChance,
+            d.effectValue, d.defensePercent, d.summonDotDamage, d.element);
     }
-    
+
+    // --- Efeitos Visuais ---
+    function showTurnBanner(text, duration = 1200) {
+        if (!turnBanner) return;
+        turnBanner.textContent = text;
+        turnBanner.classList.remove("hidden");
+        // força reflow
+        void turnBanner.offsetWidth;
+        turnBanner.classList.add("show");
+        setTimeout(() => {
+            turnBanner.classList.remove("show");
+            setTimeout(() => turnBanner.classList.add("hidden"), 300);
+        }, duration);
+    }
+
+    function showScreenFlash(type, duration = 300) {
+        if (!screenFlash) return;
+        screenFlash.className = `screen-flash flash-${type}`;
+        setTimeout(() => { screenFlash.className = "screen-flash"; }, duration);
+    }
+
+    function animateAttack(attackerKey) {
+        const attacker = battleState[attackerKey];
+        if (!attacker.sideElement) return;
+        attacker.sideElement.classList.remove("attacking");
+        void attacker.sideElement.offsetWidth;
+        attacker.sideElement.classList.add("attacking");
+        setTimeout(() => attacker.sideElement.classList.remove("attacking"), 400);
+    }
+
+    function animateDamage(targetKey, isCrit = false) {
+        const target = battleState[targetKey];
+        if (!target.sideElement) return;
+        const cls = isCrit ? "shake-crit" : "shake-damage";
+        target.sideElement.classList.remove("shake-damage", "shake-crit", "hit-flash", "crit-flash");
+        void target.sideElement.offsetWidth;
+        target.sideElement.classList.add(cls, isCrit ? "crit-flash" : "hit-flash");
+        setTimeout(() => target.sideElement.classList.remove(cls, "hit-flash", "crit-flash"), 600);
+    }
+
+    function animateDotDamage(targetKey) {
+        const target = battleState[targetKey];
+        if (!target.sideElement) return;
+        target.sideElement.classList.remove("shake-dot");
+        void target.sideElement.offsetWidth;
+        target.sideElement.classList.add("shake-dot");
+        setTimeout(() => target.sideElement.classList.remove("shake-dot"), 300);
+    }
+
+    function animateHeal(targetKey) {
+        const target = battleState[targetKey];
+        if (!target.sideElement) return;
+        target.sideElement.classList.remove("heal-flash");
+        void target.sideElement.offsetWidth;
+        target.sideElement.classList.add("heal-flash");
+        setTimeout(() => target.sideElement.classList.remove("heal-flash"), 600);
+    }
+
+    function animateChakra(targetKey) {
+        const target = battleState[targetKey];
+        if (!target.sideElement) return;
+        target.sideElement.classList.remove("chakra-flash");
+        void target.sideElement.offsetWidth;
+        target.sideElement.classList.add("chakra-flash");
+        setTimeout(() => target.sideElement.classList.remove("chakra-flash"), 500);
+    }
+
+    function animateStatusPulse(targetKey) {
+        const target = battleState[targetKey];
+        if (!target.sideElement) return;
+        target.sideElement.classList.remove("status-active");
+        void target.sideElement.offsetWidth;
+        target.sideElement.classList.add("status-active");
+        setTimeout(() => target.sideElement.classList.remove("status-active"), 700);
+    }
+
     function triggerBarShadow(barFillElement) {
         const barContainer = barFillElement.parentElement;
-        if (barContainer) {
-            barContainer.classList.remove("active-shadow");
-            void barContainer.offsetWidth; 
-            barContainer.classList.add("active-shadow");
-            setTimeout(() => {
-                barContainer.classList.remove("active-shadow");
-            }, 2000);
-        }
+        if (!barContainer) return;
+        barContainer.classList.remove("active-shadow");
+        void barContainer.offsetWidth;
+        barContainer.classList.add("active-shadow");
+        setTimeout(() => barContainer.classList.remove("active-shadow"), 2000);
     }
 
-    function showFloatingNumber(value, type, feedbackElement) { // Modificado para aceitar o elemento diretamente
+    function showFloatingNumber(value, type, feedbackElement) {
         if (!feedbackElement) return;
-
         const numberElement = document.createElement("div");
-        numberElement.classList.add("floating-number");
-        numberElement.classList.add(type); 
-        numberElement.textContent = (value > 0 && (type === "heal" || type === "chakra-gained" || type === "defense-gained")) ? `+${value}` : `${value}`; 
-        
+        numberElement.classList.add("floating-number", type);
+        numberElement.textContent = (value > 0 && (type === "heal" || type === "chakra-gained" || type === "defense-gained")) ? `+${value}` : `${value}`;
         feedbackElement.appendChild(numberElement);
-
-        setTimeout(() => {
-            if (numberElement.parentElement) {
-                numberElement.parentElement.removeChild(numberElement);
-            }
-        }, 2000);
+        setTimeout(() => numberElement.remove(), 2000);
     }
 
-    // --- Funções de Áudio (sem alterações) ---
-    function playAmbientSound() { if (!ambientSound) { ambientSound = new Audio("sons/som1ambiente.mp3"); ambientSound.loop = true; } ambientSound.play().catch(e => console.error("Audio Error:", e)); }
-    function stopAmbientSound() { if (ambientSound && !ambientSound.paused) { ambientSound.pause(); ambientSound.currentTime = 0; } }
-    function playVictorySound() { stopAmbientSound(); if (!victorySound) { victorySound = new Audio("sons/vitoria.mp3"); } victorySound.currentTime = 0; victorySound.play().catch(e => console.error("Audio Error:", e)); }
-    function playDefeatSound() { stopAmbientSound(); if (!defeatSound) { defeatSound = new Audio("sons/voceperdeu.mp3"); } defeatSound.currentTime = 0; defeatSound.play().catch(e => console.error("Audio Error:", e)); }
+    // --- Funções de Áudio (atalhos) ---
+    function sfx(name) {
+        if (!gameAudio.initialized) return;
+        const map = {
+            hit: () => gameAudio.playHit(),
+            crit: () => gameAudio.playCrit(),
+            heal: () => gameAudio.playHeal(),
+            shield: () => gameAudio.playShield(),
+            card: () => gameAudio.playCard(),
+            error: () => gameAudio.playError(),
+            draw: () => gameAudio.playDraw(),
+            turn: () => gameAudio.playTurnStart(),
+            stun: () => gameAudio.playStun(),
+            burn: () => gameAudio.playBurn(),
+            poison: () => gameAudio.playPoison(),
+            chakra: () => gameAudio.playChakra(),
+            victory: () => gameAudio.playVictory(),
+            defeat: () => gameAudio.playDefeat(),
+            summon: () => gameAudio.playSummon(),
+            discard: () => gameAudio.playDiscard()
+        };
+        if (map[name]) map[name]();
+    }
 
-    // --- Funções de Atualização da UI ---
+    // --- Atualização da UI ---
     function updateTargetStatsUI(targetKey) {
         const target = battleState[targetKey];
 
-        // Health Bar
-        const oldHealthPercent = parseFloat(target.healthBarFill.style.width) || (target.maxHealth > 0 ? (target.health / target.maxHealth) * 100 : 0);
-        const newHealthPercent = target.maxHealth > 0 ? Math.max(0, (target.health / target.maxHealth) * 100) : 0;
-        if (Math.abs(oldHealthPercent - newHealthPercent) > 0.01) triggerBarShadow(target.healthBarFill);
-        target.healthBarFill.style.width = `${newHealthPercent}%`;
-        if (target.healthBarText) target.healthBarText.textContent = `${target.health} / ${target.maxHealth}`;
+        const oldHP = parseFloat(target.healthBarFill.style.width) || 0;
+        const newHP = target.maxHealth > 0 ? Math.max(0, (target.health / target.maxHealth) * 100) : 0;
+        if (Math.abs(oldHP - newHP) > 0.01) triggerBarShadow(target.healthBarFill);
+        target.healthBarFill.style.width = `${newHP}%`;
+        if (target.healthBarText) target.healthBarText.textContent = `${Math.max(0, target.health)} / ${target.maxHealth}`;
 
-        // Chakra Bar
-        const oldChakraPercent = parseFloat(target.chakraBarFill.style.width) || (target.maxChakra > 0 ? (target.chakra / target.maxChakra) * 100 : 0);
-        const newChakraPercent = target.maxChakra > 0 ? Math.max(0, (target.chakra / target.maxChakra) * 100) : 0;
-        if (Math.abs(oldChakraPercent - newChakraPercent) > 0.01) triggerBarShadow(target.chakraBarFill);
-        target.chakraBarFill.style.width = `${newChakraPercent}%`;
+        const oldCh = parseFloat(target.chakraBarFill.style.width) || 0;
+        const newCh = target.maxChakra > 0 ? Math.max(0, (target.chakra / target.maxChakra) * 100) : 0;
+        if (Math.abs(oldCh - newCh) > 0.01) triggerBarShadow(target.chakraBarFill);
+        target.chakraBarFill.style.width = `${newCh}%`;
         if (target.chakraBarText) target.chakraBarText.textContent = `${target.chakra} / ${target.maxChakra}`;
 
-        // Defense Bar
-        const oldDefensePercent = parseFloat(target.defenseBarFill.style.width) || (target.maxDefense > 0 ? (target.defense / target.maxDefense) * 100 : 0);
-        const newDefensePercent = target.maxDefense > 0 ? Math.max(0, (target.defense / target.maxDefense) * 100) : 0;
-        if (Math.abs(oldDefensePercent - newDefensePercent) > 0.01) triggerBarShadow(target.defenseBarFill);
-        target.defenseBarFill.style.width = `${newDefensePercent}%`;
+        const oldDef = parseFloat(target.defenseBarFill.style.width) || 0;
+        const newDef = target.maxDefense > 0 ? Math.max(0, (target.defense / target.maxDefense) * 100) : 0;
+        if (Math.abs(oldDef - newDef) > 0.01) triggerBarShadow(target.defenseBarFill);
+        target.defenseBarFill.style.width = `${newDef}%`;
         if (target.defenseBarText) target.defenseBarText.textContent = `${target.defense} / ${target.maxDefense}`;
-        
+
         updateStatusEffectsUI(target, target.statusEffectsDisplay);
         updateTempStatsUI(target, target.tempStatsDisplay);
     }
@@ -341,37 +424,34 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateStatusEffectsUI(target, displayElement) {
         displayElement.innerHTML = "";
         target.statusEffects.forEach(effect => {
-            const effectElement = document.createElement("span");
-            effectElement.classList.add("status-effect-icon", `effect-${effect.type}`);
-            let effectDescription = effect.description || cardDatabase[effect.sourceCardId]?.description || "";
-            if (effect.value && effect.type !== "stun") effectDescription += ` (${effect.value > 0 && effect.type.includes("percent") ? Math.round(effect.value*100)+"%": effect.value})`;
-            effectElement.title = `${effect.name}: ${effectDescription} (${effect.duration}t restantes)`;
-            
-            let effectText = effect.name ? effect.name.substring(0, 3).toUpperCase() : "EFF";
-            if (effect.type === "buff") effectText = "BUF";
-            if (effect.type === "debuff") effectText = "DEB";
-            if (effect.type === "dot" || effect.type === "burn" || effect.type === "poison" || effect.type === "summon_dot") effectText = "DoT";
-            if (effect.type === "hot") effectText = "HoT";
-            if (effect.type === "stun") effectText = "STN";
-            if (effect.type === "defense_percent") effectText = "D%";
-            if (effect.type === "reduce_defense_percent_active") effectText = "-D%"; // Para debuff de defesa percentual no alvo
-
-            effectElement.textContent = `${effectText}(${effect.duration})`;
-            displayElement.appendChild(effectElement);
+            const el = document.createElement("span");
+            el.classList.add("status-effect-icon", `effect-${effect.type}`);
+            let text = effect.name ? effect.name.substring(0, 3).toUpperCase() : "EFF";
+            if (effect.type === "buff" || effect.type === "buff_taijutsu_atk") text = "BUF";
+            if (effect.type === "debuff") text = "DEB";
+            if (["dot", "burn", "poison", "summon_dot"].includes(effect.type)) text = "DoT";
+            if (effect.type === "hot") text = "HoT";
+            if (effect.type === "stun") text = "STN";
+            if (effect.type === "defense_percent") text = "D%";
+            el.textContent = `${text}(${effect.duration})`;
+            el.title = `${effect.name}: ${effect.description || ""} (${effect.duration}t)`;
+            displayElement.appendChild(el);
         });
     }
 
     function updateTempStatsUI(target, displayElement) {
         displayElement.innerHTML = "";
-        let statsText = "";
-        if (target.attackBoost !== 0) {
-            statsText += `<span>Atk Boost: ${target.attackBoost > 0 ? "+" : ""}${target.attackBoost}</span>`;
-        }
-        // Não mostrar mais target.defense ou target.defensePercent aqui, pois são refletidos na barra ou nos status icons
-        if (target.critChanceBoost !== 0) {
-            statsText += `<span>Crit Boost: +${Math.round(target.critChanceBoost * 100)}%</span>`;
-        }
-        displayElement.innerHTML = statsText;
+        let stats = "";
+        if (target.attackBoost !== 0) stats += `<span>Atk Boost: ${target.attackBoost > 0 ? "+" : ""}${target.attackBoost}</span>`;
+        if (target.critChanceBoost !== 0) stats += `<span>Crit Boost: +${Math.round(target.critChanceBoost * 100)}%</span>`;
+        displayElement.innerHTML = stats;
+    }
+
+    function updateDeckInfo() {
+        if (playerDeckCount) playerDeckCount.textContent = `Deck: ${battleState.player.deck.length}`;
+        if (playerDiscardCount) playerDiscardCount.textContent = `Descarte: ${battleState.player.discardPile.length}`;
+        if (opponentDeckCount) opponentDeckCount.textContent = `Deck: ${battleState.opponent.deck.length}`;
+        if (opponentDiscardCount) opponentDiscardCount.textContent = `Descarte: ${battleState.opponent.discardPile.length}`;
     }
 
     function updateHandUI(playerType) {
@@ -384,7 +464,14 @@ document.addEventListener("DOMContentLoaded", () => {
         target.hand.forEach((cardInstance, index) => {
             if (playerType === "player") {
                 const cardElement = cardInstance.getHTMLElement();
+                // Marca cartas que não podem ser jogadas
+                if (battleState.player.chakra < cardInstance.cost || battleState.currentPlayer !== "player" || battleState.gamePhase !== "player_turn") {
+                    cardElement.classList.add("unplayable");
+                }
                 cardElement.onclick = () => playCardFromHand(cardInstance.id, index);
+                // Tooltip no hover
+                cardElement.addEventListener("mouseenter", (e) => showCardTooltip(e, cardInstance));
+                cardElement.addEventListener("mouseleave", hideCardTooltip);
                 target.handElement.appendChild(cardElement);
             } else {
                 const cardBackElement = document.createElement("div");
@@ -395,14 +482,72 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    function updateTurnUI() { turnCounterDisplay.textContent = battleState.turn; }
-    function updateAllCombatUI() { updatePlayerStatsUI(); updateOpponentStatsUI(); updateHandUI("player"); updateHandUI("opponent"); updateTurnUI(); }
+    // --- Tooltip simples para cartas no combate ---
+    let combatTooltip = null;
+    function showCardTooltip(event, card) {
+        if (!combatTooltip) {
+            combatTooltip = document.createElement("div");
+            combatTooltip.className = "custom-tooltip";
+            document.body.appendChild(combatTooltip);
+        }
+        let content = `<h4>${card.name}</h4><p class="tooltip-cost">Custo: ${card.cost} Chakra</p><p>${card.description}</p>`;
+        if (card.element && card.element !== "Nenhum") content += `<p class="tooltip-element">Elemento: ${card.element}</p>`;
+        combatTooltip.innerHTML = content;
+        combatTooltip.classList.add("visible");
+        positionTooltip(event);
+        cardElementHover();
+    }
 
+    function cardElementHover() { /* placeholder para future */ }
+
+    function hideCardTooltip() {
+        if (combatTooltip) combatTooltip.classList.remove("visible");
+    }
+
+    function positionTooltip(event) {
+        if (!combatTooltip || !combatTooltip.classList.contains("visible")) return;
+        const PAD = 12;
+        let x = event.pageX + PAD;
+        let y = event.pageY + PAD;
+        const rect = combatTooltip.getBoundingClientRect();
+        if (x + rect.width > window.innerWidth - PAD) x = event.pageX - rect.width - PAD;
+        if (y + rect.height > window.innerHeight - PAD) y = event.pageY - rect.height - PAD;
+        combatTooltip.style.left = `${x}px`;
+        combatTooltip.style.top = `${y}px`;
+    }
+
+    document.addEventListener("mousemove", (e) => {
+        if (combatTooltip && combatTooltip.classList.contains("visible")) positionTooltip(e);
+    });
+
+    function updateTurnUI() {
+        if (turnCounterDisplay) turnCounterDisplay.textContent = battleState.turn;
+        if (phaseLabel) {
+            if (battleState.currentPlayer === "player") {
+                phaseLabel.textContent = "Sua Vez";
+                phaseLabel.classList.remove("opponent-turn");
+            } else {
+                phaseLabel.textContent = "Vez do Oponente";
+                phaseLabel.classList.add("opponent-turn");
+            }
+        }
+    }
+
+    function updateAllCombatUI() {
+        updatePlayerStatsUI();
+        updateOpponentStatsUI();
+        updateHandUI("player");
+        updateHandUI("opponent");
+        updateTurnUI();
+        updateDeckInfo();
+    }
+
+    // --- Deck ---
     function initializeDeck(targetType) {
         const target = battleState[targetType];
         target.deck = [];
         const allCardIds = Object.keys(cardDatabase);
-        for (let i = 0; i < 20; i++) { target.deck.push(allCardIds[Math.floor(Math.random() * allCardIds.length)]); }
+        for (let i = 0; i < 20; i++) target.deck.push(allCardIds[Math.floor(Math.random() * allCardIds.length)]);
         shuffleArray(target.deck);
     }
 
@@ -413,21 +558,51 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (target.hand.length < 7) {
                     const cardId = target.deck.pop();
                     const cardInstance = createCardInstance(cardId);
-                    if (cardInstance) { target.hand.push(cardInstance); logMessage(`${playerType === "player" ? "Jogador" : "Oponente"} comprou ${cardInstance.name}.`); }
-                } else { logMessage(`${playerType === "player" ? "Jogador" : "Oponente"} não pode comprar (mão cheia).`); target.deck.pop(); }
-            } else { logMessage(`${playerType === "player" ? "Jogador" : "Oponente"} sem cartas no deck!`); }
+                    if (cardInstance) {
+                        target.hand.push(cardInstance);
+                        logMessage(`${playerType === "player" ? "Jogador" : "Oponente"} comprou ${cardInstance.name}.`, "log-system");
+                        sfx("draw");
+                        // Animação de carta comprada
+                        if (playerType === "player") {
+                            setTimeout(() => {
+                                const cards = target.handElement.querySelectorAll(".card");
+                                if (cards.length > 0) cards[cards.length - 1].classList.add("drawn");
+                            }, 10);
+                        }
+                    }
+                } else {
+                    logMessage(`${playerType === "player" ? "Jogador" : "Oponente"} não pode comprar (mão cheia).`);
+                    target.deck.pop();
+                }
+            } else {
+                // Embaralha descarte de volta
+                if (target.discardPile.length > 0) {
+                    target.deck = [...target.discardPile];
+                    target.discardPile = [];
+                    shuffleArray(target.deck);
+                    logMessage(`${playerType === "player" ? "Jogador" : "Oponente"} embaralhou o descarte no deck.`, "log-system");
+                    i--; // tenta de novo
+                } else {
+                    logMessage(`${playerType === "player" ? "Jogador" : "Oponente"} sem cartas no deck!`);
+                }
+            }
         }
+        updateDeckInfo();
     }
 
+    // --- Batalha ---
     function startBattle() {
-        logMessage("Nova batalha iniciada!");
+        logMessage("Nova batalha iniciada!", "log-system");
         currentRivalName = rivalNames[Math.floor(Math.random() * rivalNames.length)];
-        logMessage(`Seu oponente é: ${currentRivalName}`);
-        const opponentAvatarElement = document.querySelector("#opponent-status-side .player-avatar");
-        if (opponentAvatarElement) opponentAvatarElement.textContent = currentRivalName.substring(0,3).toUpperCase();
+        logMessage(`Seu oponente é: ${currentRivalName}`, "log-system");
+        if (opponentNameDisplay) opponentNameDisplay.textContent = currentRivalName;
+        const opponentAvatar = document.querySelector("#opponent-status-side .player-avatar");
+        if (opponentAvatar) opponentAvatar.textContent = currentRivalName.substring(0, 3).toUpperCase();
 
         battleStartTime = Date.now();
-        playAmbientSound(); 
+        gameAudio.init();
+        gameAudio.startMusic();
+
         battleState.turn = 1;
         battleState.currentPlayer = "player";
         battleState.gamePhase = "player_turn";
@@ -435,39 +610,52 @@ document.addEventListener("DOMContentLoaded", () => {
         battleResultsScreen.classList.add("battle-results-screen-hidden");
 
         ["player", "opponent"].forEach(type => {
-            const target = battleState[type];
-            target.health = target.maxHealth; target.chakra = target.maxChakra; 
-            target.defense = 0; // Defesa inicial da barra
-            // target.maxDefense já está definido no battleState inicial
-            target.attackBoost = 0; target.critChanceBoost = 0;
-            target.statusEffects = []; target.hand = []; target.discardPile = [];
-            target.isStunned = false; target.canPlayCard = true;
+            const t = battleState[type];
+            t.health = t.maxHealth;
+            t.chakra = t.maxChakra;
+            t.defense = 0;
+            t.attackBoost = 0;
+            t.critChanceBoost = 0;
+            t.statusEffects = [];
+            t.hand = [];
+            t.discardPile = [];
+            t.isStunned = false;
+            t.canPlayCard = true;
             initializeDeck(type);
             drawCard(type, 3);
         });
-        logMessage("Turno do Jogador.");
+
+        showTurnBanner("SEU TURNO!");
+        sfx("turn");
+        logMessage("Turno do Jogador.", "log-system");
         endTurnButton.disabled = false;
         updateAllCombatUI();
     }
 
     function showResultsScreen(playerWon) {
         battleState.gamePhase = "results_screen";
-        stopAmbientSound();
-        const battleDurationMs = Date.now() - battleStartTime;
-        const minutes = Math.floor(battleDurationMs / 60000);
-        const seconds = Math.floor((battleDurationMs % 60000) / 1000);
+        gameAudio.stopMusic();
+        const durationMs = Date.now() - battleStartTime;
+        const minutes = Math.floor(durationMs / 60000);
+        const seconds = Math.floor((durationMs % 60000) / 1000);
         resultTime.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         rivalNameDisplay.textContent = `Rival: ${currentRivalName}`;
 
         if (playerWon) {
-            battleResultTitle.textContent = "Vitória!"; playVictorySound();
-            resultTrophies.textContent = "+25"; resultCoins.textContent = "+100"; resultStars.textContent = "★★★"; 
-            nextLevelButton.style.display = "inline-block"; 
+            battleResultTitle.textContent = "Vitória!";
+            sfx("victory");
+            showScreenFlash("victory", 800);
+            showTurnBanner("VITÓRIA!", 2000);
+            resultTrophies.textContent = "+25"; resultCoins.textContent = "+100"; resultStars.textContent = "★★★";
+            nextLevelButton.style.display = "inline-block";
             closeResultsButton.textContent = "Menu Principal";
         } else {
-            battleResultTitle.textContent = "Derrota!"; playDefeatSound();
-            resultTrophies.textContent = "-10"; resultCoins.textContent = "+10"; resultStars.textContent = "☆☆☆"; 
-            nextLevelButton.style.display = "none"; 
+            battleResultTitle.textContent = "Derrota!";
+            sfx("defeat");
+            showScreenFlash("defeat", 800);
+            showTurnBanner("DERROTA...", 2000);
+            resultTrophies.textContent = "-10"; resultCoins.textContent = "+10"; resultStars.textContent = "☆☆☆";
+            nextLevelButton.style.display = "none";
             closeResultsButton.textContent = "Tentar Novamente";
         }
         battleResultsScreen.classList.remove("battle-results-screen-hidden");
@@ -477,19 +665,34 @@ document.addEventListener("DOMContentLoaded", () => {
     function playCardFromHand(cardId, handIndex) {
         const player = battleState.player;
         if (battleState.currentPlayer !== "player" || battleState.gamePhase !== "player_turn" || !player.canPlayCard) {
-            logMessage("Não é seu turno ou você não pode jogar cartas agora."); return;
+            logMessage("Não é seu turno ou você não pode jogar cartas agora.");
+            sfx("error");
+            return;
         }
         const cardInstance = player.hand[handIndex];
-        if (!cardInstance || cardInstance.id !== cardId) { logMessage("Carta inválida."); return; }
-        if (player.chakra < cardInstance.cost) { logMessage(`Chakra insuficiente para ${cardInstance.name}.`); return; }
-        
+        if (!cardInstance || cardInstance.id !== cardId) {
+            logMessage("Carta inválida.");
+            sfx("error");
+            return;
+        }
+        if (player.chakra < cardInstance.cost) {
+            logMessage(`Chakra insuficiente para ${cardInstance.name}.`);
+            sfx("error");
+            return;
+        }
+
+        // Animação de carta saindo da mão
+        const cardEls = player.handElement.querySelectorAll(".card");
+        if (cardEls[handIndex]) cardEls[handIndex].classList.add("playing");
+
         const chakraSpent = cardInstance.cost;
         player.chakra -= chakraSpent;
         if (chakraSpent > 0) showFloatingNumber(-chakraSpent, "chakra-spent", player.chakraFeedback);
-        
+        sfx("card");
+
         player.hand.splice(handIndex, 1);
         player.discardPile.push(cardInstance.id);
-        logMessage(`Jogador usou ${cardInstance.name}.`);
+        logMessage(`Jogador usou ${cardInstance.name}.`, "log-system");
         applyCardEffect(cardInstance, "player", "opponent");
         updateAllCombatUI();
         checkWinCondition();
@@ -499,149 +702,188 @@ document.addEventListener("DOMContentLoaded", () => {
         const caster = battleState[casterKey];
         const target = battleState[targetKey];
 
-        // Aplicar ganho de defesa da carta (defenseBuff)
+        // Animação de ataque se causar dano
+        if (card.attack > 0) {
+            animateAttack(casterKey);
+            setTimeout(() => sfx("hit"), 100);
+        }
+
+        // Defesa direta da carta
         if (card.defenseBuff > 0) {
             const oldDef = caster.defense;
             caster.defense = Math.min(caster.maxDefense, caster.defense + card.defenseBuff);
-            const gainedDef = caster.defense - oldDef;
-            if (gainedDef > 0) showFloatingNumber(gainedDef, "defense-gained", caster.defenseFeedback);
-            logMessage(`${casterKey} ganhou ${gainedDef} de defesa com ${card.name}.`);
+            const gained = caster.defense - oldDef;
+            if (gained > 0) {
+                showFloatingNumber(gained, "defense-gained", caster.defenseFeedback);
+                sfx("shield");
+                animateHeal(casterKey); // flash visual de ganho
+            }
+            logMessage(`${capitalize(casterKey)} ganhou ${gained} de defesa com ${card.name}.`, "log-status");
         }
 
-        // Aplicar dano da carta
+        // Dano da carta
         if (card.attack > 0) {
-            let totalAttackDamage = card.attack + caster.attackBoost;
+            let totalDamage = card.attack + caster.attackBoost;
+            let isCrit = false;
             if (Math.random() < (card.critChance + caster.critChanceBoost)) {
-                totalAttackDamage = Math.round(totalAttackDamage * 1.5);
-                logMessage("Acerto Crítico!");
+                totalDamage = Math.round(totalDamage * 1.5);
+                isCrit = true;
+                logMessage("★ ACERTO CRÍTICO! ★", "log-critical");
+                sfx("crit");
             }
-            totalAttackDamage = Math.round(totalAttackDamage);
+            totalDamage = Math.round(totalDamage);
 
-            // Aplicar Redução de Dano Percentual (debuffs no atacante ou buffs no defensor)
+            // Redução de dano percentual do alvo
             let effectiveDR = 0;
-            target.statusEffects.forEach(effect => { 
-                if (effect.type === "defense_percent" && effect.duration > 0) effectiveDR += effect.value;
+            target.statusEffects.forEach(eff => {
+                if (eff.type === "defense_percent" && eff.duration > 0) effectiveDR += eff.value;
             });
-            caster.statusEffects.forEach(effect => { // Considerar debuffs no atacante que reduzem seu dano
-                if (effect.type === "reduce_attack_percent" && effect.duration > 0) effectiveDR += effect.value; 
+            caster.statusEffects.forEach(eff => {
+                if (eff.type === "reduce_attack_percent" && eff.duration > 0) effectiveDR += eff.value;
             });
-            totalAttackDamage = Math.round(totalAttackDamage * (1 - effectiveDR));
-            if (totalAttackDamage < 0) totalAttackDamage = 0; // Dano não pode ser negativo
+            totalDamage = Math.round(totalDamage * (1 - effectiveDR));
+            if (totalDamage < 0) totalDamage = 0;
 
-            logMessage(`${card.name} tenta causar ${totalAttackDamage} de dano a ${targetKey}.`);
+            // Vantagem elemental
+            const elemResult = getElementMultiplier(card.element, null);
+            if (elemResult.mult !== 1) {
+                totalDamage = Math.round(totalDamage * elemResult.mult);
+                if (elemResult.label) logMessage(elemResult.label, elemResult.mult > 1 ? "log-critical" : "log-damage");
+            }
 
-            // Dano à barra de defesa primeiro
-            let damageDealtToShield = Math.min(totalAttackDamage, target.defense);
-            if (damageDealtToShield > 0) {
-                target.defense -= damageDealtToShield;
-                showFloatingNumber(-damageDealtToShield, "defense-lost", target.defenseFeedback);
-                logMessage(`${damageDealtToShield} de dano absorvido pela defesa de ${targetKey}.`);
+            logMessage(`${card.name} causa ${totalDamage} de dano!`, "log-damage");
+
+            // Dano à defesa primeiro
+            const toShield = Math.min(totalDamage, target.defense);
+            if (toShield > 0) {
+                target.defense -= toShield;
+                showFloatingNumber(-toShield, "defense-lost", target.defenseFeedback);
+                logMessage(`${toShield} absorvido pela defesa de ${capitalize(targetKey)}.`, "log-status");
+                setTimeout(() => sfx("shield"), 150);
             }
 
             // Dano restante à vida
-            let remainingDamageToHealth = totalAttackDamage - damageDealtToShield;
-            if (remainingDamageToHealth > 0) {
-                target.health -= remainingDamageToHealth;
-                showFloatingNumber(-remainingDamageToHealth, "damage", target.healthFeedback);
-                logMessage(`${remainingDamageToHealth} de dano causado à vida de ${targetKey}.`);
-            }
-            if (totalAttackDamage === 0 && damageDealtToShield === 0) {
-                 logMessage(`${card.name} não causou dano.`);
+            const toHealth = totalDamage - toShield;
+            if (toHealth > 0) {
+                target.health -= toHealth;
+                const delay = toShield > 0 ? 200 : 50;
+                setTimeout(() => {
+                    showFloatingNumber(-toHealth, isCrit ? "crit" : "damage", target.healthFeedback);
+                    animateDamage(targetKey, isCrit);
+                    if (isCrit) showScreenFlash("crit", 400);
+                }, delay);
+            } else if (toShield > 0) {
+                // Todo o dano absorvido
+                animateDamage(targetKey, false);
             }
         }
 
-        // Aplicar outros efeitos da carta
+        // Outros efeitos
         switch (card.effect) {
-            case "draw_card": drawCard(casterKey, card.effectValue || 1); break;
-            case "heal":
+            case "draw_card":
+                drawCard(casterKey, card.effectValue || 1);
+                break;
+            case "heal": {
                 const healAmount = card.effectValue || 0;
-                const oldHealth = caster.health;
+                const oldH = caster.health;
                 caster.health = Math.min(caster.maxHealth, caster.health + healAmount);
-                const actualHeal = caster.health - oldHealth;
-                if (actualHeal > 0) showFloatingNumber(actualHeal, "heal", caster.healthFeedback);
-                logMessage(`${casterKey} recuperou ${actualHeal} de vida.`);
+                const actualHeal = caster.health - oldH;
+                if (actualHeal > 0) {
+                    showFloatingNumber(actualHeal, "heal", caster.healthFeedback);
+                    animateHeal(casterKey);
+                    sfx("heal");
+                }
+                logMessage(`${capitalize(casterKey)} recuperou ${actualHeal} de vida.`, "log-heal");
                 break;
-            case "recover_chakra":
-                const chakraRecoverAmount = card.effectValue || 0;
-                const oldChakra = caster.chakra;
-                caster.chakra = Math.min(caster.maxChakra, caster.chakra + chakraRecoverAmount);
-                const actualChakraGain = caster.chakra - oldChakra;
-                if (actualChakraGain > 0) showFloatingNumber(actualChakraGain, "chakra-gained", caster.chakraFeedback);
-                logMessage(`${casterKey} recuperou ${actualChakraGain} de chakra.`);
+            }
+            case "recover_chakra": {
+                const amount = card.effectValue || 0;
+                const oldCh = caster.chakra;
+                caster.chakra = Math.min(caster.maxChakra, caster.chakra + amount);
+                const actualGain = caster.chakra - oldCh;
+                if (actualGain > 0) {
+                    showFloatingNumber(actualGain, "chakra-gained", caster.chakraFeedback);
+                    animateChakra(casterKey);
+                    sfx("chakra");
+                }
+                logMessage(`${capitalize(casterKey)} recuperou ${actualGain} de chakra.`, "log-status");
                 break;
-            case "apply_defense_percent_buff": // Efeito para cartas como "Parede de Lama"
-                 addStatusEffect(casterKey, { 
-                    id: `def_percent_${Date.now()}`,
-                    name: card.name, 
-                    type: "defense_percent", 
-                    description: `+${Math.round(card.defensePercent*100)}% Redução de Dano`, 
-                    value: card.defensePercent, 
-                    duration: card.duration, 
-                    sourceCardId: card.id 
+            }
+            case "apply_defense_percent_buff":
+                addStatusEffect(casterKey, {
+                    id: `def_pct_${Date.now()}`,
+                    name: card.name, type: "defense_percent",
+                    description: `+${Math.round(card.defensePercent * 100)}% Redução de Dano`,
+                    value: card.defensePercent, duration: card.duration, sourceCardId: card.id
                 });
-                logMessage(`${casterKey} ativou ${card.name} (+${Math.round(card.defensePercent*100)}% Redução de Dano por ${card.duration} turnos).`);
+                sfx("shield");
+                logMessage(`${capitalize(casterKey)} ativou ${card.name} (+${Math.round(card.defensePercent * 100)}% Red. Dano, ${card.duration}t).`, "log-status");
                 break;
-            case "reduce_opponent_defense_percent": // Exemplo de debuff
-                addStatusEffect(targetKey, { 
-                    id: `reduce_def_percent_${Date.now()}`,
-                    name: card.name, 
-                    type: "defense_percent", // Usa o mesmo tipo, mas com valor negativo para aumentar dano recebido
-                    description: `-${Math.round(card.effectValue*100)}% Redução de Dano (Alvo recebe mais dano)`, 
-                    value: -card.effectValue, // Valor negativo para aumentar dano sofrido
-                    duration: card.duration, 
-                    sourceCardId: card.id 
+            case "reduce_opponent_defense_percent":
+                addStatusEffect(targetKey, {
+                    id: `red_def_pct_${Date.now()}`,
+                    name: card.name, type: "defense_percent",
+                    description: `-${Math.round(card.effectValue * 100)}% Redução de Dano (recebe mais dano)`,
+                    value: -card.effectValue, duration: card.duration, sourceCardId: card.id
                 });
-                logMessage(`${targetKey} foi afetado por ${card.name} (-${Math.round(card.effectValue*100)}% Redução de Dano por ${card.duration} turnos).`);
+                sfx("poison");
+                logMessage(`${capitalize(targetKey)} foi afetado por ${card.name}!`, "log-damage");
                 break;
-            // Adicionar outros casos de efeito aqui (burn, stun, summon_dot, etc.)
             case "burn":
-            case "summon_dot":
-            case "stun":
-                 addStatusEffect(targetKey, { 
-                    id: `${card.effect}_${Date.now()}`,
-                    name: card.name, 
-                    type: card.effect, 
-                    description: card.description, 
-                    value: card.effect === "stun" ? 0 : (card.effectValue || card.summonDotDamage || 0), 
-                    duration: card.duration, 
-                    sourceCardId: card.id 
+                addStatusEffect(targetKey, {
+                    id: `burn_${Date.now()}`, name: card.name, type: "burn",
+                    description: card.description, value: card.effectValue || 0,
+                    duration: card.duration, sourceCardId: card.id
                 });
-                logMessage(`${targetKey} foi afetado por ${card.name} (${card.effect}).`);
+                sfx("burn");
+                logMessage(`${capitalize(targetKey)} foi queimado por ${card.name}!`, "log-damage");
+                break;
+            case "summon_dot":
+                addStatusEffect(targetKey, {
+                    id: `summon_${Date.now()}`, name: card.name, type: "summon_dot",
+                    description: card.description, value: card.summonDotDamage || 0,
+                    duration: card.duration, sourceCardId: card.id
+                });
+                sfx("summon");
+                logMessage(`${card.name} invocada! Dano contínuo em ${capitalize(targetKey)}.`, "log-damage");
+                break;
+            case "stun":
+                addStatusEffect(targetKey, {
+                    id: `stun_${Date.now()}`, name: card.name, type: "stun",
+                    description: "Atordoado - não pode jogar", value: 0,
+                    duration: card.duration, sourceCardId: card.id
+                });
+                sfx("stun");
+                logMessage(`${capitalize(targetKey)} foi ATORDOADO!`, "log-critical");
                 break;
             case "buff_next_taijutsu":
-                 addStatusEffect(casterKey, { 
-                    id: `buff_taijutsu_${Date.now()}`,
-                    name: card.name, 
-                    type: "buff_taijutsu_atk", 
-                    description: `+${card.effectValue} Atk para próximo Taijutsu`, 
-                    value: card.effectValue, 
-                    duration: card.duration, // Normalmente 1 ou até ser usado
-                    sourceCardId: card.id 
+                addStatusEffect(casterKey, {
+                    id: `buff_tai_${Date.now()}`, name: card.name, type: "buff_taijutsu_atk",
+                    description: `+${card.effectValue} Atk para próximo Taijutsu`,
+                    value: card.effectValue, duration: card.duration || 99, sourceCardId: card.id
                 });
-                logMessage(`${casterKey} ativou ${card.name}.`);
+                logMessage(`${capitalize(casterKey)} ativou ${card.name}.`, "log-status");
                 break;
-            // ... outros efeitos
         }
-        // Lógica para consumir buff_next_taijutsu se a carta atual for Taijutsu
+
+        // Consumir buff de taijutsu se a carta atual for Taijutsu
         if (card.type === "Taijutsu") {
-            const buffIndex = caster.statusEffects.findIndex(eff => eff.type === "buff_taijutsu_atk" && eff.duration > 0);
-            if (buffIndex !== -1) {
-                const buff = caster.statusEffects[buffIndex];
-                logMessage(`${casterKey} consumiu ${buff.name} para ${card.name}.`);
-                caster.attackBoost -= buff.value; // Remove o boost após o cálculo do dano desta carta
-                caster.statusEffects.splice(buffIndex, 1);
+            const idx = caster.statusEffects.findIndex(e => e.type === "buff_taijutsu_atk" && e.duration > 0);
+            if (idx !== -1) {
+                const buff = caster.statusEffects[idx];
+                logMessage(`${capitalize(casterKey)} consumiu ${buff.name} para ${card.name}!`, "log-critical");
+                sfx("crit");
+                caster.attackBoost -= buff.value;
+                caster.statusEffects.splice(idx, 1);
             }
         }
     }
 
     function addStatusEffect(targetKey, effectData) {
         const target = battleState[targetKey];
-        // Verificar se já existe um efeito do mesmo tipo e fonte para evitar duplicatas (opcional, depende da regra do jogo)
-        // const existingEffectIndex = target.statusEffects.findIndex(e => e.sourceCardId === effectData.sourceCardId && e.type === effectData.type);
-        // if (existingEffectIndex !== -1) { target.statusEffects[existingEffectIndex] = effectData; } else { target.statusEffects.push(effectData); }
         target.statusEffects.push(effectData);
-        logMessage(`${targetKey} recebeu efeito: ${effectData.name || effectData.type}.`);
-        // Se o efeito for buff_taijutsu_atk, aplicar o boost imediatamente
+        logMessage(`${capitalize(targetKey)} recebeu efeito: ${effectData.name || effectData.type}.`, "log-status");
+        animateStatusPulse(targetKey);
         if (effectData.type === "buff_taijutsu_atk") {
             target.attackBoost += effectData.value;
         }
@@ -649,8 +891,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function applyStatusEffectsAtTurnStart(entityKey) {
         const entity = battleState[entityKey];
-        const opponentKey = entityKey === "player" ? "opponent" : "player";
-        const opponent = battleState[opponentKey];
+        let hasActiveEffects = false;
 
         entity.statusEffects = entity.statusEffects.filter(effect => {
             if (effect.duration <= 0) return false;
@@ -658,112 +899,170 @@ document.addEventListener("DOMContentLoaded", () => {
             switch (effect.type) {
                 case "burn":
                 case "poison":
-                case "summon_dot":
-                    const dotDamage = effect.value || 0;
-                    if (dotDamage > 0) {
-                        entity.health -= dotDamage;
-                        showFloatingNumber(-dotDamage, "damage", entity.healthFeedback);
-                        logMessage(`${entityKey} sofreu ${dotDamage} de dano de ${effect.name}.`);
+                case "summon_dot": {
+                    const dotDmg = effect.value || 0;
+                    if (dotDmg > 0) {
+                        entity.health -= dotDmg;
+                        hasActiveEffects = true;
+                        setTimeout(() => {
+                            showFloatingNumber(-dotDmg, "damage", entity.healthFeedback);
+                            animateDotDamage(entityKey);
+                        }, 100);
+                        logMessage(`${capitalize(entityKey)} sofreu ${dotDmg} de dano de ${effect.name}.`, "log-damage");
+                        if (effect.type === "burn") sfx("burn");
+                        else if (effect.type === "poison") sfx("poison");
+                        else sfx("hit");
                     }
                     break;
-                case "hot": // Heal Over Time
+                }
+                case "hot": {
                     const hotHeal = effect.value || 0;
                     if (hotHeal > 0) {
                         const oldH = entity.health;
                         entity.health = Math.min(entity.maxHealth, entity.health + hotHeal);
-                        const actualHotHeal = entity.health - oldH;
-                        if(actualHotHeal > 0) showFloatingNumber(actualHotHeal, "heal", entity.healthFeedback);
-                        logMessage(`${entityKey} recuperou ${actualHotHeal} de vida de ${effect.name}.`);
+                        const actual = entity.health - oldH;
+                        if (actual > 0) {
+                            hasActiveEffects = true;
+                            setTimeout(() => {
+                                showFloatingNumber(actual, "heal", entity.healthFeedback);
+                                animateHeal(entityKey);
+                            }, 100);
+                            logMessage(`${capitalize(entityKey)} recuperou ${actual} de vida de ${effect.name}.`, "log-heal");
+                            sfx("heal");
+                        }
                     }
                     break;
-                // defense_percent e outros buffs/debuffs são passivos, aplicados no cálculo de dano ou stats
+                }
+                case "stun":
+                    entity.isStunned = true;
+                    hasActiveEffects = true;
+                    logMessage(`${capitalize(entityKey)} está ATORDOADO!`, "log-critical");
+                    break;
             }
             effect.duration--;
             return effect.duration > 0;
         });
-        // Recalcular stats que podem ser afetados por buffs que não são de dano direto
-        // Por exemplo, attackBoost de "buff_taijutsu_atk" é removido ao usar, não aqui.
+
+        if (hasActiveEffects) animateStatusPulse(entityKey);
     }
 
     function checkWinCondition() {
-        const player = battleState.player;
-        const opponent = battleState.opponent;
-        if (player.health <= 0) {
-            logMessage("Jogador foi derrotado!");
+        if (battleState.player.health <= 0) {
+            logMessage("Jogador foi derrotado!", "log-damage");
             battleState.gamePhase = "game_over";
             endTurnButton.disabled = true;
-            showResultsScreen(false);
+            setTimeout(() => showResultsScreen(false), 500);
             return true;
         }
-        if (opponent.health <= 0) {
-            logMessage("Oponente foi derrotado!");
+        if (battleState.opponent.health <= 0) {
+            logMessage("Oponente foi derrotado!", "log-critical");
             battleState.gamePhase = "game_over";
             endTurnButton.disabled = true;
-            showResultsScreen(true);
+            setTimeout(() => showResultsScreen(true), 500);
             return true;
         }
         return false;
     }
 
+    function capitalize(str) {
+        return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
     function endTurn() {
         if (battleState.gamePhase === "game_over") return;
-        logMessage(`Fim do turno de ${battleState.currentPlayer}.`);
-        
-        // Lógica de final de turno para o jogador atual (ex: remover buffs de 1 turno)
-        // applyStatusEffectsAtTurnEnd(battleState.currentPlayer);
+        logMessage(`Fim do turno de ${battleState.currentPlayer === "player" ? "Jogador" : "Oponente"}.`, "log-system");
 
         if (battleState.currentPlayer === "player") {
             battleState.currentPlayer = "opponent";
-            logMessage("Turno do Oponente.");
-            applyStatusEffectsAtTurnStart("opponent"); // Efeitos de início de turno para o oponente
+            logMessage("Turno do Oponente.", "log-system");
+            showTurnBanner("TURNO DO OPONENTE", 1000);
+            applyStatusEffectsAtTurnStart("opponent");
             if (checkWinCondition()) return;
             updateAllCombatUI();
-            setTimeout(opponentTurnLogic, 1000);
+            endTurnButton.disabled = true;
+            setTimeout(opponentTurnLogic, 1200);
         } else {
             battleState.currentPlayer = "player";
-            logMessage("Turno do Jogador.");
-            applyStatusEffectsAtTurnStart("player"); // Efeitos de início de turno para o jogador
+            logMessage("Turno do Jogador.", "log-system");
+            showTurnBanner("SEU TURNO!", 1000);
+            sfx("turn");
+            applyStatusEffectsAtTurnStart("player");
             if (checkWinCondition()) return;
-            drawCard("player", 1); // Jogador compra 1 carta no início do seu turno
+            drawCard("player", 1);
             battleState.player.canPlayCard = true;
-            battleState.player.isStunned = false; // Limpa stun no início do turno
+            battleState.player.isStunned = false;
             battleState.turn++;
             updateAllCombatUI();
             endTurnButton.disabled = false;
         }
     }
 
+    // --- IA do Oponente (melhorada) ---
     function opponentTurnLogic() {
-        if (battleState.gamePhase === "game_over" || battleState.opponent.isStunned) {
-            if(battleState.opponent.isStunned) logMessage("Oponente está atordoado e não pode jogar.");
-            endTurn(); // Passa o turno mesmo se atordoado
+        if (battleState.gamePhase === "game_over") return;
+
+        if (battleState.opponent.isStunned) {
+            logMessage("Oponente está atordoado e não pode jogar!", "log-critical");
+            sfx("stun");
+            setTimeout(() => endTurn(), 800);
             return;
         }
-        logMessage("Oponente está pensando...");
-        // Lógica simples: Oponente joga a primeira carta que pode pagar, se tiver chakra.
+
+        logMessage("Oponente está pensando...", "log-system");
         const opponent = battleState.opponent;
-        let cardPlayed = false;
-        if (opponent.hand.length > 0) {
-            for (let i = 0; i < opponent.hand.length; i++) {
-                const card = opponent.hand[i];
-                if (opponent.chakra >= card.cost) {
-                    opponent.chakra -= card.cost;
-                    if (card.cost > 0) showFloatingNumber(-card.cost, "chakra-spent", opponent.chakraFeedback);
-                    opponent.hand.splice(i, 1);
-                    opponent.discardPile.push(card.id);
-                    logMessage(`Oponente usou ${card.name}.`);
-                    applyCardEffect(card, "opponent", "player");
-                    cardPlayed = true;
-                    break; 
-                }
-            }
+
+        // IA estratégica: prioriza cartas por situação
+        const playableCards = opponent.hand
+            .map((card, idx) => ({ card, idx }))
+            .filter(({ card }) => opponent.chakra >= card.cost);
+
+        if (playableCards.length === 0) {
+            logMessage("Oponente não pode jogar nenhuma carta.");
+            setTimeout(() => endTurn(), 800);
+            return;
         }
-        if (!cardPlayed) {
-            logMessage("Oponente não jogou nenhuma carta.");
+
+        // Prioriza: cura se vida baixa, ataque se pode matar, senão maior dano
+        const hpPercent = opponent.health / opponent.maxHealth;
+        let chosen = null;
+
+        // Se vida baixa e tem cura, cura
+        if (hpPercent < 0.35) {
+            chosen = playableCards.find(({ card }) => card.effect === "heal");
         }
+        // Se pode matar com ataque, ataca
+        if (!chosen) {
+            chosen = playableCards.find(({ card }) =>
+                card.attack > 0 && card.attack >= battleState.player.health);
+        }
+        // Se oponente tem defesa alta, prefere ignora-defesa ou debuff
+        if (!chosen && battleState.player.defense > 20) {
+            chosen = playableCards.find(({ card }) =>
+                card.type === "Debuff" || card.effect === "ignore_defense");
+        }
+        // Senão, joga a carta de maior dano/custo que pode pagar
+        if (!chosen) {
+            chosen = playableCards.reduce((best, current) => {
+                const bestVal = (best.card.attack || 0) + (best.card.effectValue || 0) + best.card.cost;
+                const curVal = (current.card.attack || 0) + (current.card.effectValue || 0) + current.card.cost;
+                return curVal > bestVal ? current : best;
+            });
+        }
+
+        if (chosen) {
+            const { card, idx } = chosen;
+            opponent.chakra -= card.cost;
+            if (card.cost > 0) showFloatingNumber(-card.cost, "chakra-spent", opponent.chakraFeedback);
+            opponent.hand.splice(idx, 1);
+            opponent.discardPile.push(card.id);
+            logMessage(`Oponente usou ${card.name}!`, "log-damage");
+            sfx("card");
+            applyCardEffect(card, "opponent", "player");
+        }
+
         updateAllCombatUI();
         if (checkWinCondition()) return;
-        setTimeout(endTurn, 1500); // Pequeno delay antes de finalizar o turno do oponente
+        setTimeout(endTurn, 1500);
     }
 
     // --- Event Listeners ---
@@ -777,21 +1076,18 @@ document.addEventListener("DOMContentLoaded", () => {
     restartBattleButton.addEventListener("click", startBattle);
     closeResultsButton.addEventListener("click", () => {
         if (battleResultTitle.textContent === "Vitória!") {
-            // Lógica para ir ao menu principal ou próxima fase geral do jogo
-            logMessage("Retornando ao menu principal (simulado).");
+            logMessage("Retornando ao menu principal.", "log-system");
             battleResultsScreen.classList.remove("visible");
             battleResultsScreen.classList.add("battle-results-screen-hidden");
-            // Aqui você poderia redirecionar ou carregar outra parte do jogo
-        } else { // Derrota
-            startBattle(); // Tentar novamente o mesmo nível/batalha
+        } else {
+            startBattle();
         }
     });
     nextLevelButton.addEventListener("click", () => {
-        logMessage("Iniciando próximo nível (nova batalha).");
-        startBattle(); // Inicia uma nova batalha, que servirá como "próximo nível"
+        logMessage("Iniciando próximo nível!", "log-system");
+        startBattle();
     });
 
-    // --- Início do Jogo ---
+    // --- Início ---
     startBattle();
 });
-

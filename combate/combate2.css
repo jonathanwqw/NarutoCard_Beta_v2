@@ -1,7 +1,10 @@
 /* ============================================================
-   NARUTO PIXEL CARD GAME — Combate v2
+   NARUTO PIXEL CARD GAME — Combate v3
    Sistema unificado de dimensionamento de caixas/cartas
+   + Sons + Animações + Feedback Visual Aprimorado
    ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
 :root {
   --card-w: 72px;
@@ -691,3 +694,435 @@ body { display: flex; flex-direction: column; }
 
   .scroll-arrow { padding: 5px 7px; font-size: 13px; }
 }
+
+/* ============================================================
+   FEEDBACK VISUAL DE COMBATE — Animações e Efeitos
+   ============================================================ */
+
+/* --- Header com controles --- */
+#game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+#game-header h1 { margin: 0; flex: 1; }
+
+.header-controls {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 2px solid var(--line-dark);
+  border-radius: 6px;
+  background: var(--bg-dark);
+  color: var(--ink);
+  font-size: 16px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.15s;
+  padding: 0;
+  line-height: 1;
+}
+
+.icon-button:hover {
+  border-color: var(--accent);
+  transform: scale(1.1);
+}
+
+/* --- Indicador de turno --- */
+.turn-indicator {
+  font-family: 'Press Start 2P', 'Courier New', monospace;
+  font-size: 0.8em;
+  color: var(--accent-light);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+}
+
+.phase-label {
+  font-size: 0.75em;
+  padding: 3px 10px;
+  border-radius: 4px;
+  background: rgba(230, 126, 34, 0.2);
+  border: 1px solid var(--accent);
+  color: var(--accent-light);
+  transition: all 0.3s;
+}
+
+.phase-label.opponent-turn {
+  background: rgba(231, 76, 60, 0.2);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* --- Banner de turno --- */
+.turn-banner {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  font-family: 'Press Start 2P', 'Courier New', monospace;
+  font-size: clamp(1rem, 4vw, 2rem);
+  color: var(--gold);
+  text-shadow: 3px 3px 0 #000, 0 0 20px rgba(241, 196, 15, 0.5);
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s, transform 0.3s;
+  white-space: nowrap;
+}
+
+.turn-banner.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.turn-banner.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* --- Screen flash --- */
+.screen-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.screen-flash.flash-damage {
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(231, 76, 60, 0.4) 100%);
+  opacity: 1;
+}
+
+.screen-flash.flash-heal {
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(46, 204, 113, 0.3) 100%);
+  opacity: 1;
+}
+
+.screen-flash.flash-crit {
+  background: radial-gradient(ellipse at center, transparent 30%, rgba(241, 196, 15, 0.5) 100%);
+  opacity: 1;
+}
+
+.screen-flash.flash-victory {
+  background: radial-gradient(ellipse at center, transparent 20%, rgba(241, 196, 15, 0.6) 100%);
+  opacity: 1;
+}
+
+.screen-flash.flash-defeat {
+  background: radial-gradient(ellipse at center, transparent 20%, rgba(0, 0, 0, 0.7) 100%);
+  opacity: 1;
+}
+
+/* --- Animações de shake (dano recebido) --- */
+@keyframes shake-small {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-3px); }
+  40% { transform: translateX(3px); }
+  60% { transform: translateX(-2px); }
+  80% { transform: translateX(2px); }
+}
+
+@keyframes shake-medium {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  10% { transform: translateX(-6px) translateY(-2px); }
+  25% { transform: translateX(5px) translateY(1px); }
+  40% { transform: translateX(-4px) translateY(-1px); }
+  55% { transform: translateX(4px) translateY(2px); }
+  70% { transform: translateX(-3px); }
+  85% { transform: translateX(2px); }
+}
+
+@keyframes shake-large {
+  0%, 100% { transform: translateX(0) translateY(0) rotate(0); }
+  10% { transform: translateX(-10px) translateY(-3px) rotate(-1deg); }
+  20% { transform: translateX(8px) translateY(2px) rotate(1deg); }
+  35% { transform: translateX(-7px) translateY(-2px) rotate(-0.5deg); }
+  50% { transform: translateX(6px) translateY(1px) rotate(0.5deg); }
+  65% { transform: translateX(-5px); }
+  80% { transform: translateX(3px); }
+}
+
+.status-side.shake-damage {
+  animation: shake-medium 0.4s ease;
+}
+
+.status-side.shake-crit {
+  animation: shake-large 0.5s ease;
+}
+
+.status-side.shake-dot {
+  animation: shake-small 0.25s ease;
+}
+
+/* --- Atacante avança (lunge) --- */
+@keyframes lunge-right {
+  0% { transform: translateX(0); }
+  30% { transform: translateX(20px) scale(1.02); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes lunge-left {
+  0% { transform: translateX(0); }
+  30% { transform: translateX(-20px) scale(1.02); }
+  100% { transform: translateX(0); }
+}
+
+#player-status-side.attacking {
+  animation: lunge-right 0.35s ease;
+}
+
+#opponent-status-side.attacking {
+  animation: lunge-left 0.35s ease;
+}
+
+/* --- Flash vermelho no lado que recebe dano --- */
+@keyframes damage-flash {
+  0% { box-shadow: inset 0 0 0 0 transparent; }
+  15% { box-shadow: inset 0 0 30px 10px rgba(231, 76, 60, 0.5); }
+  100% { box-shadow: inset 0 0 0 0 transparent; }
+}
+
+.status-side.hit-flash {
+  animation: damage-flash 0.4s ease;
+}
+
+/* --- Flash verde de cura --- */
+@keyframes heal-flash {
+  0% { box-shadow: inset 0 0 0 0 transparent; }
+  15% { box-shadow: inset 0 0 30px 10px rgba(46, 204, 113, 0.4); }
+  100% { box-shadow: inset 0 0 0 0 transparent; }
+}
+
+.status-side.heal-flash {
+  animation: heal-flash 0.5s ease;
+}
+
+/* --- Flash azul de chakra --- */
+@keyframes chakra-flash {
+  0% { box-shadow: inset 0 0 0 0 transparent; }
+  15% { box-shadow: inset 0 0 25px 8px rgba(52, 152, 219, 0.4); }
+  100% { box-shadow: inset 0 0 0 0 transparent; }
+}
+
+.status-side.chakra-flash {
+  animation: chakra-flash 0.4s ease;
+}
+
+/* --- Flash dourado de crítico --- */
+@keyframes crit-flash {
+  0% { box-shadow: inset 0 0 0 0 transparent; }
+  10% { box-shadow: inset 0 0 40px 15px rgba(241, 196, 15, 0.6); }
+  100% { box-shadow: inset 0 0 0 0 transparent; }
+}
+
+.status-side.crit-flash {
+  animation: crit-flash 0.5s ease;
+}
+
+/* --- Números flutuantes (melhorados) --- */
+@keyframes float-up-fade {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  50% { transform: translateY(-20px) scale(1.2); opacity: 1; }
+  100% { transform: translateY(-40px) scale(0.8); opacity: 0; }
+}
+
+.floating-number {
+  position: absolute;
+  right: 5px;
+  top: 0;
+  font-family: 'Press Start 2P', 'Courier New', monospace;
+  font-weight: bold;
+  z-index: 50;
+  pointer-events: none;
+  animation: float-up-fade 1.8s ease forwards;
+  text-shadow: 1px 1px 0 #000, -1px -1px 0 #000;
+  white-space: nowrap;
+}
+
+.floating-number.damage { color: var(--danger); font-size: 1.1em; }
+.floating-number.crit { color: var(--gold); font-size: 1.4em; }
+.floating-number.heal { color: #2ecc71; font-size: 1.1em; }
+.floating-number.chakra-spent { color: #3498db; font-size: 0.85em; }
+.floating-number.chakra-gained { color: #2ecc71; font-size: 0.95em; }
+.floating-number.defense-gained { color: #ecf0f1; font-size: 0.95em; }
+.floating-number.defense-lost { color: #95a5a6; font-size: 0.9em; }
+.floating-number.stun { color: var(--gold); font-size: 1.1em; }
+
+/* --- Carta jogada: animação de saída --- */
+@keyframes card-play-fly {
+  0% { transform: translateY(0) scale(1) rotate(0); opacity: 1; }
+  100% { transform: translateY(-80px) scale(0.5) rotate(15deg); opacity: 0; }
+}
+
+.card.playing {
+  animation: card-play-fly 0.4s ease forwards;
+  pointer-events: none;
+}
+
+/* --- Carta sendo comprada: animação de entrada --- */
+@keyframes card-draw-in {
+  0% { transform: translateY(-30px) scale(0.7); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.card.drawn {
+  animation: card-draw-in 0.3s ease;
+}
+
+/* --- Carta não jogável (chakra insuficiente) --- */
+.card.unplayable {
+  opacity: 0.5;
+  filter: grayscale(0.6);
+  cursor: not-allowed;
+}
+
+.card.unplayable:hover {
+  transform: none;
+  box-shadow: none;
+  filter: grayscale(0.4);
+}
+
+/* --- Info do deck --- */
+.deck-info {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  font-size: 0.75em;
+  color: var(--muted);
+  margin-top: 4px;
+  padding: 2px 0;
+}
+
+.deck-info span {
+  background: rgba(0,0,0,0.2);
+  padding: 1px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--line-dark);
+}
+
+/* --- Botões do jogo --- */
+.game-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.game-button.primary {
+  background-color: var(--accent);
+  border-color: var(--accent-dark);
+  font-size: 1em;
+}
+
+.game-button.primary:hover:not(:disabled) {
+  background-color: var(--accent-light);
+}
+
+.game-button.secondary {
+  background-color: var(--line-dark);
+  border-color: var(--line);
+  font-size: 0.85em;
+}
+
+/* --- Status side: flash de status effect no início do turno --- */
+@keyframes status-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(241, 196, 15, 0.1); }
+  100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); }
+}
+
+.status-side.status-active {
+  animation: status-pulse 0.6s ease;
+}
+
+/* --- Efeito de vitória no log --- */
+#message-log p.log-critical {
+  color: var(--gold);
+  font-weight: bold;
+}
+
+#message-log p.log-damage {
+  color: #e8a0a0;
+}
+
+#message-log p.log-heal {
+  color: #a0e8a0;
+}
+
+#message-log p.log-system {
+  color: var(--accent-light);
+}
+
+#message-log p.log-status {
+  color: #a0c8e8;
+}
+
+/* --- Tooltip no combate --- */
+.custom-tooltip {
+  position: absolute;
+  z-index: 2000;
+  background: var(--bg-dark);
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  padding: 10px 14px;
+  max-width: 260px;
+  font-size: 0.85em;
+  color: var(--ink);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+}
+
+.custom-tooltip.visible { opacity: 1; }
+
+.custom-tooltip h4 {
+  margin: 0 0 6px;
+  color: var(--accent-light);
+  font-size: 1em;
+}
+
+.custom-tooltip .tooltip-cost {
+  color: #3498db;
+  font-weight: bold;
+  margin: 2px 0;
+}
+
+.custom-tooltip .tooltip-element {
+  color: var(--gold);
+  margin: 4px 0 0;
+  font-style: italic;
+}
+
+.custom-tooltip p { margin: 4px 0; color: var(--muted); }
+
+/* --- Badge de elemento na carta --- */
+.card-element {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  font-size: 0.7em;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(0,0,0,0.5);
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+.card-image-placeholder { position: relative; }
