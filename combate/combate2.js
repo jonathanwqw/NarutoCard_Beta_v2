@@ -740,8 +740,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function updateTurnUI() {
         if (turnCounterDisplay) turnCounterDisplay.textContent = battleState.turn;
+        const playerSide = document.getElementById("player-status-side");
+        const opponentSide = document.getElementById("opponent-status-side");
+        const isPlayerTurn = battleState.currentPlayer === "player";
         if (phaseLabel) {
-            if (battleState.currentPlayer === "player") {
+            if (isPlayerTurn) {
                 phaseLabel.textContent = "Sua Vez";
                 phaseLabel.classList.remove("opponent-turn");
             } else {
@@ -749,6 +752,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 phaseLabel.classList.add("opponent-turn");
             }
         }
+        const inBattle = battleState.gamePhase !== "game_over" && battleState.gamePhase !== "results_screen" && battleState.gamePhase !== "setup";
+        if (playerSide) playerSide.classList.toggle("turn-active", isPlayerTurn && inBattle);
+        if (opponentSide) opponentSide.classList.toggle("turn-active", !isPlayerTurn && inBattle);
     }
 
     function updateAllCombatUI() {
