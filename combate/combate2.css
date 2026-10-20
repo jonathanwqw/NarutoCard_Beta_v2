@@ -269,6 +269,7 @@ body { display: flex; flex-direction: column; }
 .effect-buff { background-color: #27ae60; color: #fff; border-color: #2ecc71; }
 .effect-debuff { background-color: var(--danger-dark); color: #fff; border-color: var(--danger); }
 .effect-dot { background-color: #8e44ad; color: #fff; border-color: #9b59b6; }
+.effect-bleed { background-color: #a00000; color: #fff; border-color: #e74c3c; animation: bleed-blink 1.2s ease-in-out infinite; }
 .effect-hot { background-color: #16a085; color: #fff; border-color: #1abc9c; }
 .effect-stun { background-color: var(--accent-light); color: var(--bg); border-color: var(--gold); }
 .effect-defense_percent { background-color: #2980b9; color: #fff; border-color: #3498db; }
@@ -420,11 +421,25 @@ body { display: flex; flex-direction: column; }
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 1.9em;
+  font-size: 2.1em;
   font-weight: bold;
   margin: 3px 0;
-  background-color: rgba(255,255,255,0.2);
-  border-radius: 2px;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(255,255,255,0.35), rgba(255,255,255,0.08) 70%),
+    rgba(255,255,255,0.15);
+  border-radius: 4px;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.35);
+  position: relative;
+  overflow: hidden;
+}
+
+.card-element-icon {
+  position: absolute;
+  top: 2px;
+  left: 3px;
+  font-size: 0.55em;
+  opacity: 0.95;
+  filter: drop-shadow(0 0 3px rgba(0,0,0,0.6));
 }
 
 .card-type {
@@ -963,6 +978,13 @@ body { display: flex; flex-direction: column; }
 .floating-number.defense-gained { color: #ecf0f1; font-size: 0.95em; }
 .floating-number.defense-lost { color: #95a5a6; font-size: 0.9em; }
 .floating-number.stun { color: var(--gold); font-size: 1.1em; }
+.floating-number.bleed { color: #e74c3c; font-size: 1em; }
+.floating-number.bleed::before { content: "🩸 "; }
+
+@keyframes bleed-blink {
+  0%, 100% { box-shadow: 0 0 2px rgba(231,76,60,0.4); opacity: 1; }
+  50% { box-shadow: 0 0 10px rgba(231,76,60,0.9); opacity: 0.75; }
+}
 
 /* --- Carta jogada: animação de saída --- */
 @keyframes card-play-fly {

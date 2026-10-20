@@ -593,6 +593,40 @@ class AudioEngine {
         }, 800);
     }
 
+    // ====== SONS DE SANGRAMENTO / CURA ======
+
+    // Sangramento: corte úmido e gotejo
+    playBleed() {
+        if (!this.enabled || !this.initialized) return;
+        this.resume();
+        const t = this.ctx.currentTime;
+        // "Slice" agudo
+        const noise = this._noise(0.12);
+        const hp = this.ctx.createBiquadFilter();
+        hp.type = "highpass";
+        hp.frequency.setValueAtTime(2000, t);
+        const ng = this.ctx.createGain();
+        ng.gain.setValueAtTime(0.35, t);
+        ng.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+        noise.connect(hp); hp.connect(ng); ng.connect(this.sfxGain);
+        noise.start(t); noise.stop(t + 0.12);
+        // Gotejo grave (ping ping)
+        setTimeout(() => this._playTone(180, "sine", 0.12, 0.2), 80);
+        setTimeout(() => this._playTone(140, "sine", 0.14, 0.16), 200);
+        setTimeout(() => this._playTone(110, "sine", 0.16, 0.12), 330);
+    }
+
+    // Antídoto / bandagem: alívio suave
+    playCleanse() {
+        if (!this.enabled || !this.initialized) return;
+        this.resume();
+        const notes = [392, 523, 659, 880];
+        notes.forEach((freq, i) => {
+            setTimeout(() => this._playTone(freq, "sine", 0.3, 0.14), i * 90);
+        });
+        setTimeout(() => this._playTone(1047, "triangle", 0.5, 0.1), 380);
+    }
+
     // ====== LOGICA PRINCIPAL DE EFEITO ======
     // Toca o som correto de acordo com o tipo/elemento da carta
     playCardEffect(card) {
@@ -603,6 +637,8 @@ class AudioEngine {
 
         // Efeitos específicos primeiro
         if (effect === "heal" || effect === "remove_debuffs") { this.playHeal(); return; }
+        if (effect === "cleanse_bleed") { this.playCleanse(); return; }
+        if (effect === "bleed") { this.playBleed(); return; }
         if (effect === "recover_chakra") { this.playChakra(); return; }
         if (effect === "burn") { this.playFire(); return; }
         if (effect === "poison") { this.playPoison(); return; }
@@ -638,38 +674,115 @@ class AudioEngine {
 
     _musicLoop() {
         if (!this.musicPlaying || !this.ctx) return;
-        // Progressão musical simples de batalha (Am - F - C - G)
-        const chords = [
-            [220, 262, 330],
-            [175, 220, 262],
-            [196, 247, 294],
-            [165, 196, 247]
-        ];
-        const beatDuration = 0.8;
-        let timeOffset = 0;
 
-        chords.forEach((chord) => {
-            chord.forEach(freq => {
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = "triangle";
-                osc.frequency.value = freq;
-                gain.gain.setValueAtTime(0, this.ctx.currentTime + timeOffset);
-                gain.gain.linearRampToValueAtTime(0.08, this.ctx.currentTime + timeOffset + 0.05);
-                gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + timeOffset + beatDuration);
-                osc.connect(gain);
-                gain.connect(this.musicGain);
-                osc.start(this.ctx.currentTime + timeOffset);
-                osc.stop(this.ctx.currentTime + timeOffset + beatDuration);
-                this.musicOscillators.push(osc);
-            });
-            timeOffset += beatDuration;
+        // Escala pentatônica japonesa (hirajoshi) aproximada - clima ninja
+        // Frequências em A menor pentatônica + notas de tensão
+        const scale = [220.00, 246.94, 261.63, 329.63, 349.23, 440.00, 493.88, 523.25];
+        const beatDuration = 0.42; // passos de colcheia
+        const t0 = this.ctx.currentTime;
+
+        // 1) Drone grave contínuo (fundação harmônica)
+        const droneFreqs = [110, 164.81]; // A2 + E3
+        droneFreqs.forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const g = this.ctx.createGain();
+            osc.type = idx === 0 ? "sine" : "triangle";
+            osc.frequency.value = freq;
+            g.gain.setValueAtTime(0, t0);
+            g.gain.linearRampToValueAtTime(0.05, t0 + 0.3);
+            g.gain.setValueAtTime(0.05, t0 + 6.4);
+            g.gain.linearRampToValueAtTime(0, t0 + 6.7);
+            osc.connect(g);
+            g.connect(this.musicGain);
+            osc.start(t0);
+            osc.stop(t0 + 6.7);
+            this.musicOscillators.push(osc);
         });
+
+        // 2) Melodia de "flauta" (shakuhachi) - padrão pentatônico expressivo
+        const melody = [523.25, 493.88, 440.00, 440.00, 392, 440.00, 523.25, 493.88,
+                        329.63, 349.23, 392, 349.23, 329.63, 293.66, 261.63, 293.66];
+        melody.forEach((freq, i) => {
+            const time = t0 + i * beatDuration * 2;
+            const dur = beatDuration * 1.8;
+            const osc = this.ctx.createOscillator();
+            const g = this.ctx.createGain();
+            osc.type = "triangle";
+            osc.frequency.value = freq;
+            // leve vibrato estilo flauta
+            const lfo = this.ctx.createOscillator();
+            const lfoG = this.ctx.createGain();
+            lfo.frequency.value = 5.5;
+            lfoG.gain.value = 4;
+            lfo.connect(lfoG);
+            lfoG.connect(osc.frequency);
+            g.gain.setValueAtTime(0, time);
+            g.gain.linearRampToValueAtTime(0.07, time + 0.06);
+            g.gain.linearRampToValueAtTime(0.05, time + dur * 0.6);
+            g.gain.exponentialRampToValueAtTime(0.001, time + dur);
+            osc.connect(g);
+            g.connect(this.musicGain);
+            osc.start(time);
+            lfo.start(time);
+            osc.stop(time + dur);
+            lfo.stop(time + dur);
+            this.musicOscillators.push(osc, lfo);
+        });
+
+        // 3) Ostinato de shamisen (pizzicato) - uma nota por tempo
+        const bass = [220.00, 220.00, 164.81, 164.81, 174.61, 174.61, 196.00, 196.00];
+        bass.forEach((freq, i) => {
+            const time = t0 + i * beatDuration * 4;
+            const osc = this.ctx.createOscillator();
+            const g = this.ctx.createGain();
+            osc.type = "sawtooth";
+            osc.frequency.value = freq;
+            g.gain.setValueAtTime(0.001, time);
+            g.gain.linearRampToValueAtTime(0.045, time + 0.01);
+            g.gain.exponentialRampToValueAtTime(0.001, time + 0.5);
+            osc.connect(g);
+            g.connect(this.musicGain);
+            osc.start(time);
+            osc.stop(time + 0.5);
+            this.musicOscillators.push(osc);
+        });
+
+        // 4) Taiko: tambor grave a cada 2 tempos com eco fracop
+        for (let i = 0; i < 8; i++) {
+            const time = t0 + i * beatDuration * 4;
+            const osc = this.ctx.createOscillator();
+            const g = this.ctx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(120, time);
+            osc.frequency.exponentialRampToValueAtTime(45, time + 0.25);
+            g.gain.setValueAtTime(0.001, time);
+            g.gain.linearRampToValueAtTime(0.12, time + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.001, time + 0.35);
+            osc.connect(g);
+            g.connect(this.musicGain);
+            osc.start(time);
+            osc.stop(time + 0.35);
+            this.musicOscillators.push(osc);
+            // eco fraco
+            const echo = this.ctx.createOscillator();
+            const eg = this.ctx.createGain();
+            echo.type = "sine";
+            echo.frequency.value = 60;
+            eg.gain.setValueAtTime(0.04, time + 0.28);
+            eg.gain.exponentialRampToValueAtTime(0.001, time + 0.5);
+            echo.connect(eg);
+            eg.connect(this.musicGain);
+            echo.start(time + 0.28);
+            echo.stop(time + 0.5);
+            this.musicOscillators.push(echo);
+        }
+
+        const totalDuration = beatDuration * 32; // ~13.4s
 
         // Repete o loop
         this._musicTimeout = setTimeout(() => {
             if (this.musicPlaying) this._musicLoop();
-        }, timeOffset * 1000);
+        }, totalDuration * 1000);
     }
 
     stopMusic() {

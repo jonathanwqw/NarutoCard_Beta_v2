@@ -13,6 +13,14 @@ document.addEventListener("DOMContentLoaded", () => {
     ];
     let currentRivalName = "Oponente Desconhecido";
 
+    // Elemento temático de cada rival (usado para vantagem/desvantagem elemental)
+    const rivalElements = {
+        "Sasuke Uchiha": "Raio", "Gaara": "Terra", "Neji Hyuga": "Vento", "Rock Lee": "Nenhum",
+        "Orochimaru": "Terra", "Kabuto Yakushi": "Nenhum", "Kimimaro": "Terra", "Zabuza Momochi": "Água",
+        "Haku": "Água", "Itachi Uchiha": "Fogo", "Kisame Hoshigaki": "Água", "Deidara": "Terra",
+        "Sasori": "Nenhum", "Pain (Tendo)": "Vento", "Konan": "Vento"
+    };
+
     // --- Sistema de Elementos ---
     const elementChart = {
         "Fogo":   { strong: "Vento",  weak: "Água" },
@@ -92,21 +100,24 @@ document.addEventListener("DOMContentLoaded", () => {
             if (this.isFusion) cardElement.classList.add("card-fusion");
             cardElement.dataset.cardId = this.id;
 
-            let imagePlaceholder = this.type.substring(0, 3).toUpperCase();
-            if (this.type === "Jutsu") imagePlaceholder = "JUT";
-            if (this.type === "Taijutsu") imagePlaceholder = "TAI";
-            if (this.type === "Defesa") imagePlaceholder = "DEF";
-            if (this.type === "Item") imagePlaceholder = "ITM";
-            if (this.type === "Buff") imagePlaceholder = "BUF";
-            if (this.type === "Debuff") imagePlaceholder = "DEB";
-            if (this.type === "Invocação") imagePlaceholder = "INV";
-            if (this.type === "Modo") imagePlaceholder = "MOD";
+            const typeIcons = {
+                "Jutsu": "🌀", "Taijutsu": "👊", "Defesa": "🛡️", "Item": "📦",
+                "Buff": "⬆️", "Debuff": "⬇️", "Invocação": "🐸", "Modo": "⚡"
+            };
+            const elementIcons = {
+                "Fogo": "🔥", "Água": "💧", "Vento": "🌪️",
+                "Terra": "🪨", "Raio": "⚡", "Nenhum": "✦"
+            };
+            const icon = typeIcons[this.type] || "✦";
+            const elementIcon = this.element && this.element !== "Nenhum"
+                ? `<span class="card-element-icon" style="color:${ELEMENT_COLORS[this.element]}">${elementIcons[this.element] || ""}</span>` : "";
 
             let statsHTML = "";
-            if (this.attack > 0) statsHTML += `<span>Atk: ${this.attack}${this.critChance > 0 ? ` (${Math.round(this.critChance * 100)}%C)` : ""}</span>`;
-            if (this.defenseBuff > 0) statsHTML += `<span>Def: +${this.defenseBuff}</span>`;
-            if (this.defensePercent > 0) statsHTML += `<span>Def%: ${Math.round(this.defensePercent * 100)}% (${this.duration}t)</span>`;
-            if (this.summonDotDamage > 0) statsHTML += `<span>DoT: ${this.summonDotDamage}/${this.duration}t</span>`;
+            if (this.attack > 0) statsHTML += `<span>⚔ ${this.attack}${this.critChance > 0 ? ` (${Math.round(this.critChance * 100)}%C)` : ""}</span>`;
+            if (this.defenseBuff > 0) statsHTML += `<span>🛡 +${this.defenseBuff}</span>`;
+            if (this.defensePercent > 0) statsHTML += `<span>🛡 ${Math.round(this.defensePercent * 100)}% (${this.duration}t)</span>`;
+            if (this.summonDotDamage > 0) statsHTML += `<span>☠ ${this.summonDotDamage}/${this.duration}t</span>`;
+            if (this.effect === "bleed") statsHTML += `<span>🩸 ${this.effectValue || 2}/3s</span>`;
             if (statsHTML === "") statsHTML = "<span></span>";
 
             const elementBadge = this.element && this.element !== "Nenhum"
@@ -114,9 +125,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const fusionBadge = this.isFusion ? `<span class="card-fusion-badge">FUSÃO</span>` : "";
 
             cardElement.innerHTML = `
-                <div class="card-name">${this.name}</div>
                 <div class="card-cost">${this.cost > 0 ? this.cost : ""}</div>
-                <div class="card-image-placeholder">${imagePlaceholder}${elementBadge}${fusionBadge}</div>
+                <div class="card-name">${this.name}</div>
+                <div class="card-image-placeholder">${icon}${elementIcon}${elementBadge}${fusionBadge}</div>
                 <div class="card-type">${this.type}</div>
                 <div class="card-desc">${this.description}</div>
                 <div class="card-stats">${statsHTML}</div>
@@ -148,6 +159,10 @@ document.addEventListener("DOMContentLoaded", () => {
         "mode001": { name: "Modo Sábio (Sapo)", type: "Modo", cost: 50, description: "+20 Atk, +10 Chakra Regen por 3t.", effect: "stat_boost_regen", boost: { attack: 20 }, regen: { chakra: 10 }, duration: 3 },
         "jutsu018": { name: "Tsukuyomi", type: "Jutsu", cost: 75, description: "Atordoa oponente por 1 turno. Causa 20 dano.", effect: "stun", duration: 1, attack: 20 },
         "jutsu019": { name: "Chidori Senbon", type: "Jutsu", cost: 25, description: "Causa 30 de dano de Raio.", attack: 30, element: "Raio" },
+        "jutsu020": { name: "Kunai Envenenada", type: "Jutsu", cost: 20, description: "Causa sangramento: 2 PV a cada 3s por 4 ciclos.", effect: "bleed", effectValue: 2, duration: 4, attack: 10 },
+        "jutsu021": { name: "Corte Profundo", type: "Jutsu", cost: 30, description: "Sangramento forte: 3 PV a cada 3s por 4 ciclos.", effect: "bleed", effectValue: 3, duration: 4, attack: 15 },
+        "item004": { name: "Antídoto", type: "Item", cost: 15, description: "Remove sangramento e venenos.", effect: "cleanse_bleed" },
+        "item005": { name: "Bandagem Ninja", type: "Item", cost: 20, description: "Remove sangramento e cura 25 de Vida.", effect: "cleanse_bleed", effectValue: 25 },
     };
 
     const battleState = {
@@ -165,6 +180,7 @@ document.addEventListener("DOMContentLoaded", () => {
             health: 500, maxHealth: 500, chakra: 50, maxChakra: 380, defense: 0, maxDefense: 80,
             attackBoost: 0, critChanceBoost: 0, statusEffects: [], deck: [], hand: [], discardPile: [],
             canPlayCard: true, isStunned: false, fusionMode: false, fusionSelected: [],
+            element: "Nenhum",
             healthBarFill: null, chakraBarFill: null, defenseBarFill: null,
             healthBarText: null, chakraBarText: null, defenseBarText: null,
             healthFeedback: null, chakraFeedback: null, defenseFeedback: null,
@@ -254,7 +270,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     initializeHandScrolling();
 
-    // --- Chakra regeneração (mais generosa) ---
+    // --- Chakra regeneração (mais generosa) + sangramento por tempo ---
     function startChakraRegeneration() {
         setInterval(() => {
             if (battleState.gamePhase === "game_over" || battleState.gamePhase === "results_screen") return;
@@ -265,9 +281,33 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             updatePlayerStatsUI();
             updateOpponentStatsUI();
+            tickBleed();
         }, 3000);
     }
     startChakraRegeneration();
+
+    // --- Sangramento: 2 PV a cada 3s (em tempo real), acumulável por stacks ---
+    function tickBleed() {
+        ["player", "opponent"].forEach(key => {
+            const entity = battleState[key];
+            if (entity.health <= 0) return;
+            const bleeds = entity.statusEffects.filter(e => e.type === "bleed" && e.duration > 0);
+            if (bleeds.length === 0) return;
+            let total = 0;
+            bleeds.forEach(e => { total += (e.value || 0); });
+            entity.health = Math.max(0, entity.health - total);
+            showFloatingNumber(-total, "bleed", entity.healthFeedback);
+            animateDotDamage(key);
+            sfx("bleed");
+            logMessage(`${capitalize(key)} SANGRANDO: -${total} PV (${bleeds.length} stack${bleeds.length > 1 ? "s" : ""}).`, "log-damage");
+            // Decrementa a duração de cada stack de sangramento
+            bleeds.forEach(e => { e.duration--; });
+            entity.statusEffects = entity.statusEffects.filter(e => !(e.type === "bleed" && e.duration <= 0));
+        });
+        updatePlayerStatsUI();
+        updateOpponentStatsUI();
+        checkWinCondition();
+    }
 
     // --- Auxiliares ---
     function capitalize(str) { return str.charAt(0).toUpperCase() + str.slice(1); }
@@ -424,6 +464,7 @@ document.addEventListener("DOMContentLoaded", () => {
             poison: () => gameAudio.playPoison(), chakra: () => gameAudio.playChakra(),
             victory: () => gameAudio.playVictory(), defeat: () => gameAudio.playDefeat(),
             summon: () => gameAudio.playSummon(), discard: () => gameAudio.playDiscard(),
+            bleed: () => gameAudio.playBleed(), cleanse: () => gameAudio.playCleanse(),
             combo: () => gameAudio.playCombo(2), fusion: () => gameAudio.playFusion()
         };
         if (map[name]) map[name]();
@@ -505,6 +546,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (effect.type === "buff" || effect.type === "buff_taijutsu_atk") text = "BUF";
             if (effect.type === "debuff") text = "DEB";
             if (["dot", "burn", "poison", "summon_dot"].includes(effect.type)) text = "DoT";
+            if (effect.type === "bleed") text = "SGR";
             if (effect.type === "hot") text = "HoT";
             if (effect.type === "stun") text = "STN";
             if (effect.type === "defense_percent") text = "D%";
@@ -727,6 +769,8 @@ document.addEventListener("DOMContentLoaded", () => {
         battleState.currentPlayer = "player";
         battleState.gamePhase = "player_turn";
         battleState.combo = { player: { element: null, count: 0 }, opponent: { element: null, count: 0 } };
+        battleState.opponent.element = rivalElements[currentRivalName] || "Nenhum";
+        battleState.player.element = "Nenhum";
         battleResultsScreen.classList.remove("visible");
         battleResultsScreen.classList.add("battle-results-screen-hidden");
 
@@ -944,6 +988,28 @@ document.addEventListener("DOMContentLoaded", () => {
                 sfx("summon");
                 logMessage(`${card.name} invocada! Dano contínuo em ${capitalize(targetKey)}.`, "log-damage");
                 break;
+            case "bleed":
+                addStatusEffect(targetKey, { id: `bleed_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`, name: card.name, type: "bleed",
+                    description: `Sangramento ${card.effectValue || 2} PV/3s`, value: card.effectValue || 2, duration: card.duration || 4, sourceCardId: card.id });
+                sfx("bleed");
+                logMessage(`${capitalize(targetKey)} está SANGRANDO com ${card.name}! (-${card.effectValue || 2} PV a cada 3s)`, "log-critical");
+                break;
+            case "cleanse_bleed": {
+                const before = caster.statusEffects.length;
+                caster.statusEffects = caster.statusEffects.filter(e => !["bleed", "poison"].includes(e.type));
+                const removed = before - caster.statusEffects.length;
+                let healed = 0;
+                if (card.effectValue > 0) {
+                    const oldH = caster.health;
+                    caster.health = Math.min(caster.maxHealth, caster.health + card.effectValue);
+                    healed = caster.health - oldH;
+                }
+                sfx("cleanse");
+                if (removed > 0) logMessage(`${capitalize(casterKey)} removeu ${removed} sangramento(s)/veneno(s) com ${card.name}.`, "log-heal");
+                else logMessage(`${card.name} usado, mas nada a remover.`, "log-status");
+                if (healed > 0) { showFloatingNumber(healed, "heal", caster.healthFeedback); animateHeal(casterKey); logMessage(`${capitalize(casterKey)} recuperou ${healed} de vida.`, "log-heal"); }
+                break;
+            }
             case "stun":
                 addStatusEffect(targetKey, { id: `stun_${Date.now()}`, name: card.name, type: "stun",
                     description: "Atordoado", value: 0, duration: card.duration, sourceCardId: card.id });
@@ -1037,6 +1103,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     hasActiveEffects = true;
                     logMessage(`${capitalize(entityKey)} está ATORDOADO!`, "log-critical");
                     break;
+                case "bleed":
+                    // Sangramento decai por TEMPO (tick de 3s), não por turno.
+                    // Mantém ativo enquanto durar; não decrementa aqui.
+                    return true;
             }
             effect.duration--;
             return effect.duration > 0;
@@ -1092,12 +1162,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // --- IA do Oponente AGRESSIVA ---
-    // A IA agora joga MÚLTIPLAS cartas por turno, prioriza agressão e nunca "passa" se puder agir.
+    // A IA sempre age: prioriza eficiência de chakra, sangramento, cura e agressão,
+    // e nunca "trava" — se não puder jogar nada, encerra o turno corretamente.
     function opponentTurnLogic() {
         if (battleState.gamePhase === "game_over") return;
 
         if (battleState.opponent.isStunned) {
             logMessage("Oponente está atordoado e não pode jogar!", "log-critical");
+            battleState.opponent.isStunned = false;
             sfx("stun");
             setTimeout(() => endTurn(), 800);
             return;
@@ -1110,9 +1182,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // A IA pode jogar até N cartas por turno (loop de decisões)
     function takeOpponentAction(actionsLeft = 3) {
         const opponent = battleState.opponent;
-        const player = battleState.player;
 
         if (battleState.gamePhase === "game_over") return;
+        if (battleState.gamePhase === "results_screen") return;
 
         if (actionsLeft <= 0) {
             logMessage("Oponente encerra suas ações.", "log-system");
@@ -1120,20 +1192,20 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // Cartas jogáveis
+        // Cartas jogáveis com eficiência (dano por chakra) para decisões inteligentes
         const playable = opponent.hand
             .map((card, idx) => ({ card, idx }))
             .filter(({ card }) => opponent.chakra >= card.cost);
 
-        // Se não tem chakra para nada, mas ainda pode regenerar... passa.
+        // Se não há carta jogável, encerra o turno (nunca trava)
         if (playable.length === 0) {
-            if (actionsLeft === 3) logMessage("Oponente está sem chakra suficiente e passa.", "log-system");
-            setTimeout(() => endTurn(), 1000);
+            logMessage("Oponente não tem chakra para jogar e encerra o turno.", "log-system");
+            setTimeout(() => endTurn(), 900);
             return;
         }
 
-        const chosen = pickOpponentCard(playable, opponent, player);
-        if (!chosen) { setTimeout(() => endTurn(), 800); return; }
+        const chosen = pickOpponentCard(playable, opponent, battleState.player);
+        if (!chosen) { setTimeout(() => endTurn(), 600); return; }
 
         const { card, idx } = chosen;
         opponent.chakra -= card.cost;
@@ -1147,17 +1219,24 @@ document.addEventListener("DOMContentLoaded", () => {
         if (checkWinCondition()) return;
 
         // Continua suas ações com um pequeno delay
-        setTimeout(() => takeOpponentAction(actionsLeft - 1), 1100);
+        setTimeout(() => takeOpponentAction(actionsLeft - 1), 1000);
     }
 
-    // Heurística de escolha: agressiva, valoriza dano final, cura em emergência, combo
+    // Heurística de escolha: agressiva, valoriza dano final, sangramento, cura e combo
     function pickOpponentCard(playable, opponent, player) {
         const hpPercent = opponent.health / opponent.maxHealth;
         const playerHp = player.health;
         const oppCombo = battleState.combo.opponent;
 
+        // 0. Se estiver sangrando, usa antídoto/bandagem para estancar
+        const bleeding = opponent.statusEffects.some(e => ["bleed", "poison"].includes(e.type));
+        if (bleeding) {
+            const cleanse = playable.find(({ card }) => card.effect === "cleanse_bleed");
+            if (cleanse) return cleanse;
+        }
+
         // 1. Cura emergencial
-        if (hpPercent < 0.30) {
+        if (hpPercent < 0.35) {
             const heal = playable.find(({ card }) => card.effect === "heal");
             if (heal) return heal;
         }
@@ -1177,23 +1256,29 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-        // 4. Se jogador tem defesa alta, procura ignorar defesa ou debuff de defesa
+        // 4. Se o jogador tem defesa alta, procura ignorar defesa ou debuff de defesa
         if (player.defense > 15) {
             const ignoreDef = playable.find(({ card }) => card.effect === "ignore_defense" || card.effect === "reduce_opponent_defense_percent");
             if (ignoreDef) return ignoreDef;
         }
 
-        // 5. Se jogador está com muito dano contínuo possível, aplica DoT
+        // 5. Aplica sangramento se o jogador ainda não estiver sangrando
+        if (!player.statusEffects.some(e => e.type === "bleed")) {
+            const bleed = playable.find(({ card }) => card.effect === "bleed");
+            if (bleed && playerHp > 100) return bleed;
+        }
+
+        // 6. Aplica DoT (queimadura/veneno/invocação) se ainda não houver
         if (!player.statusEffects.some(e => ["burn", "poison", "summon_dot"].includes(e.type))) {
             const dot = playable.find(({ card }) => ["burn", "summon_dot"].includes(card.effect));
             if (dot && playerHp > 120) return dot;
         }
 
-        // 6. Agressivo: maior dano efetivo
+        // 7. Agressivo: melhor eficiência (dano por chakra), pequeno bônus para dano bruto
         return playable.reduce((best, current) => {
-            const bv = estimateDamage(best.card, opponent, player) + (best.card.cost * 0.3);
-            const cv = estimateDamage(current.card, opponent, player) + (current.card.cost * 0.3);
-            return cv > bv ? current : best;
+            const bEff = (estimateDamage(best.card, opponent, player) + best.card.attack * 0.1) / Math.max(1, best.card.cost);
+            const cEff = (estimateDamage(current.card, opponent, player) + current.card.attack * 0.1) / Math.max(1, current.card.cost);
+            return cEff > bEff ? current : best;
         });
     }
 
@@ -1203,7 +1288,7 @@ document.addEventListener("DOMContentLoaded", () => {
         let dr = 0;
         target.statusEffects.forEach(e => { if (e.type === "defense_percent") dr += e.value; });
         dmg *= (1 - dr);
-        const elem = getElementMultiplier(card.element, null);
+        const elem = getElementMultiplier(card.element, target.element);
         dmg *= elem.mult;
         // considera defesa do alvo
         const absorb = Math.min(dmg, target.defense);
