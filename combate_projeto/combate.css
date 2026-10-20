@@ -1,5 +1,17 @@
 /* Estilos para o Módulo de Combate - Naruto Pixel Card Game */
 
+:root {
+  --card-w: 72px;
+  --card-h: 118px;
+  --card-pad: 3px;
+  --card-font: 8px;
+  --card-name-h: 14px;
+  --card-type-h: 11px;
+  --card-desc-h: 30px;
+  --card-stats-h: 14px;
+  --cost-size: 16px;
+}
+
 html, body {
     height: 100%;
     margin: 0;
@@ -76,10 +88,12 @@ body {
     border: 1px dashed #7f8c8d;
     padding: 8px;
     background-color: rgba(0, 0, 0, 0.1);
+    min-width: 0;
 }
 
 .status-side {
-    flex: 1;
+    flex: 1 1 0;
+    min-width: 0;
     background-color: rgba(0, 0, 0, 0.2);
     border: 1px solid #566573;
     border-radius: 5px;
@@ -87,6 +101,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    overflow: hidden;
 }
 
 .status-side h2 {
@@ -186,17 +201,18 @@ body {
 
 .hand-area {
     border: 1px solid #7f8c8d;
-    min-height: 100px;
-    padding: 5px;
+    min-height: calc(var(--card-h) + 14px);
+    padding: 6px;
     background-color: rgba(0, 0, 0, 0.3);
     display: flex;
-    gap: 5px;
+    gap: 6px;
     flex-wrap: wrap;
     justify-content: center;
-    align-items: flex-start;
+    align-items: center;
     overflow-x: auto;
     overflow-y: hidden;
     margin-top: auto;
+    scrollbar-width: thin;
 }
 
 .hand-area p {
@@ -249,15 +265,16 @@ body {
 
 /* --- Estilos para Cartas --- */
 .card {
-    width: 65px;
-    height: 110px;
+    width: var(--card-w);
+    height: var(--card-h);
+    min-width: var(--card-w);
+    min-height: var(--card-h);
     border: 1px solid black;
     background-color: #bdc3c7;
     display: flex;
     flex-direction: column;
-    padding: 3px;
-    font-size: 8px;
-    box-sizing: border-box;
+    padding: var(--card-pad);
+    font-size: var(--card-font);
     cursor: pointer;
     position: relative;
     color: #2c3e50;
@@ -265,34 +282,39 @@ body {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     flex-shrink: 0;
     border-radius: 4px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.35);
 }
 
 .card:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 6px rgba(236, 240, 241, 0.7);
+    transform: scale(1.08) translateY(-3px);
+    box-shadow: 0 4px 12px rgba(236,240,241,0.8), 0 0 5px #e67e22;
+    z-index: 10;
 }
 
 .card-name {
     font-weight: bold;
-    font-size: 9px;
+    font-size: 1em;
     text-align: center;
-    padding: 1px;
-    background-color: rgba(0, 0, 0, 0.1);
+    padding: 1px 18px 1px 1px;
+    background-color: rgba(0,0,0,0.1);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    height: var(--card-name-h);
+    line-height: var(--card-name-h);
+    flex-shrink: 0;
 }
 
 .card-image-placeholder {
-    flex-grow: 1;
+    flex: 1 1 auto;
+    min-height: 0;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 16px;
+    font-size: 1.9em;
     font-weight: bold;
-    margin: 4px 0;
-    background-color: rgba(255, 255, 255, 0.2);
+    margin: 3px 0;
+    background-color: rgba(255,255,255,0.2);
     border-radius: 2px;
 }
 
@@ -303,40 +325,59 @@ body {
     background-color: #3498db;
     color: white;
     border-radius: 50%;
-    width: 16px;
-    height: 16px;
+    width: var(--cost-size);
+    height: var(--cost-size);
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 9px;
+    font-size: 0.95em;
     font-weight: bold;
     border: 1px solid white;
+    z-index: 2;
+    line-height: 1;
 }
 
 .card-type {
-    font-size: 7px;
+    font-size: 0.9em;
     font-style: italic;
     text-align: center;
-    padding: 1px;
+    padding: 0 1px;
     background-color: rgba(0, 0, 0, 0.05);
+    height: var(--card-type-h);
+    line-height: var(--card-type-h);
+    flex-shrink: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .card-desc {
-    font-size: 7px;
+    font-size: 0.9em;
     margin-top: 2px;
-    line-height: 1.1;
-    height: 25px;
+    line-height: 1.15;
+    flex: 0 0 var(--card-desc-h);
+    max-height: var(--card-desc-h);
     overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
 }
 
 .card-stats {
     display: flex;
     justify-content: space-around;
-    font-size: 8px;
+    align-items: center;
+    font-size: 1em;
     margin-top: 2px;
     padding-top: 2px;
     border-top: 1px solid rgba(0, 0, 0, 0.1);
+    height: var(--card-stats-h);
+    flex-shrink: 0;
+    gap: 2px;
+    overflow: hidden;
+    white-space: nowrap;
 }
+
+.card-stats span { overflow: hidden; text-overflow: ellipsis; }
 
 .card.type-jutsu { background-color: #3498db; color: white; }
 .card.type-taijutsu { background-color: #e74c3c; color: white; }
@@ -418,32 +459,56 @@ body {
     margin-top: 10px;
 }
 
-/* --- Media Queries (Adaptadas do original) --- */
+/* --- Media Queries --- */
 @media (min-width: 600px) {
+    :root {
+        --card-w: 78px;
+        --card-h: 130px;
+        --card-font: 9px;
+        --card-name-h: 15px;
+        --card-type-h: 12px;
+        --card-desc-h: 34px;
+        --card-stats-h: 15px;
+        --cost-size: 18px;
+    }
+
     #game-container h1 { font-size: 1.5em; }
     #player-profile-display { font-size: 12px; }
     .stats-display { font-size: 14px; padding: 8px; }
     .player-avatar { width: 60px; height: 60px; font-size: 10px; }
-    .hand-area { min-height: 120px; }
     #game-board { flex-direction: row; justify-content: space-between; align-items: center; padding: 10px; }
     #message-log { height: 60px; width: auto; flex-grow: 1; margin: 0 10px; font-size: 11px; }
-    .card { width: 75px; height: 130px; padding: 4px; font-size: 9px; }
-    .card-name { font-size: 10px; }
-    .card-image-placeholder { font-size: 18px; }
-    .card-cost { width: 18px; height: 18px; font-size: 10px; }
-    .card-type { font-size: 8px; }
-    .card-desc { font-size: 8px; height: 30px; }
-    .card-stats { font-size: 9px; }
     .health-bar, .chakra-bar { height: 12px; }
     .status-effects, .temp-stats { font-size: 11px; min-height: 18px; }
 }
 
 @media (min-width: 900px) {
+    :root {
+        --card-w: 84px;
+        --card-h: 140px;
+        --card-font: 9.5px;
+        --card-name-h: 16px;
+        --card-type-h: 13px;
+        --card-desc-h: 36px;
+        --card-stats-h: 16px;
+        --cost-size: 19px;
+    }
+
     #game-container { padding: 15px; gap: 15px; }
     #game-container h1 { font-size: 1.8em; }
     .stats-display { padding: 10px; gap: 6px; }
-    .hand-area { min-height: 150px; }
-    .card { width: 80px; height: 140px; }
+}
+
+@media (max-width: 599px) {
+    :root {
+        --card-w: 62px;
+        --card-h: 104px;
+        --card-font: 7.5px;
+        --card-desc-h: 24px;
+        --cost-size: 14px;
+    }
+
+    #battle-status-container { flex-direction: column; }
 }
 
 /* Efeito de sombra para barras (corrigido) */
@@ -453,30 +518,29 @@ body {
     position: absolute;
     left: 0;
     right: 0;
-    bottom: -10px; 
-    height: 10px; 
-    opacity: 0; /* Começa invisível, animação controla a aparição */
-    z-index: -1; 
+    bottom: -10px;
+    height: 10px;
+    opacity: 0;
+    z-index: -1;
 }
 
 .health-bar.active-shadow::after {
-    background: linear-gradient(to bottom, rgba(231, 76, 60, 0.7), rgba(231, 76, 60, 0)); /* Vermelho para vida */
+    background: linear-gradient(to bottom, rgba(231, 76, 60, 0.7), rgba(231, 76, 60, 0));
     animation: fadeOutShadow 2s forwards;
 }
 
 .chakra-bar.active-shadow::after {
-    background: linear-gradient(to bottom, rgba(52, 152, 219, 0.7), rgba(52, 152, 219, 0)); /* Azul para chakra */
+    background: linear-gradient(to bottom, rgba(52, 152, 219, 0.7), rgba(52, 152, 219, 0));
     animation: fadeOutShadow 2s forwards;
 }
 
 @keyframes fadeOutShadow {
     0% {
-        opacity: 0.7; /* Inicia visível */
+        opacity: 0.7;
         transform: translateY(0);
     }
     100% {
         opacity: 0;
-        transform: translateY(5px); 
+        transform: translateY(5px);
     }
-}
 }

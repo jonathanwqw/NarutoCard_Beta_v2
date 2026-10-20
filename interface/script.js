@@ -588,7 +588,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 categories[categoryName].forEach(item => {
                     const cardInstance = createCardInstance(item.id, item.info.level, item.info.xp);
                     const cardElement = cardInstance.getHTMLElement();
-                    cardElement.onclick = null; 
+                    cardElement.classList.add("card--md");
+                    cardElement.onclick = null;
                     const quantityDisplay = document.createElement("div");
                     quantityDisplay.classList.add("card-quantity");
                     quantityDisplay.textContent = `x${item.info.quantity}`;
@@ -624,6 +625,7 @@ document.addEventListener("DOMContentLoaded", () => {
             shopItemElement.classList.add("shop-item");
 
             const cardElement = cardInstance.getHTMLElement();
+            cardElement.classList.add("card--md");
             cardElement.onclick = null; // Remover listener de jogar carta
             // Adicionar listener para tooltip na loja
             cardElement.addEventListener("mouseenter", (event) => {
@@ -669,15 +671,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const shopCurrencyElement = document.getElementById("shop-currency");
         if (shopCurrencyElement) {
             shopCurrencyElement.textContent = `Moedas: ${playerProfile.currency}`;
-        } else {
-            // Criar o elemento se não existir (para garantir)
-            const currencyP = document.createElement("p");
-            currencyP.id = "shop-currency";
-            currencyP.textContent = `Moedas: ${playerProfile.currency}`;
-            const shopContainer = document.getElementById("shop-container");
-            if (shopContainer) {
-                shopContainer.insertBefore(currencyP, shopContainer.firstChild);
-            }
         }
     }
 
@@ -790,6 +783,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (equippedCardId && cardDatabase[equippedCardId]) {
                 const cardInstance = createCardInstance(equippedCardId, playerProfile.cardCollection[equippedCardId]?.level || 1);
                 cardElement = cardInstance.getHTMLElement();
+                cardElement.classList.add("card--sm");
                 cardElement.onclick = () => unequipItem("armor", slot);
                 cardElement.style.cursor = "pointer";
             }
@@ -807,6 +801,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (equippedCardId && cardDatabase[equippedCardId]) {
                 const cardInstance = createCardInstance(equippedCardId, playerProfile.cardCollection[equippedCardId]?.level || 1);
                 cardElement = cardInstance.getHTMLElement();
+                cardElement.classList.add("card--sm");
                 cardElement.onclick = () => unequipItem("tool", slot);
                 cardElement.style.cursor = "pointer";
             }
@@ -836,6 +831,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (!isEquipped || collectionInfo.quantity > Object.values(playerProfile.equippedArmor).filter(id => id === cardId).length + Object.values(playerProfile.equippedTools).filter(id => id === cardId).length ) {
                     const cardInstance = createCardInstance(cardId, collectionInfo.level, collectionInfo.xp);
                     const cardElement = cardInstance.getHTMLElement();
+                    cardElement.classList.add("card--md");
                     cardElement.onclick = () => equipItem(cardId);
                     cardElement.style.cursor = "pointer";
                     equippableItemsDiv.appendChild(cardElement);

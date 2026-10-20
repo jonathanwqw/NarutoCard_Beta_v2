@@ -197,9 +197,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 const targetHandId = arrow.dataset.target;
                 const handArea = document.getElementById(targetHandId);
                 if (handArea) {
-                    const cardWidth = 65; // Largura da carta definida no CSS
-                    const cardGap = 5; // Espaço entre as cartas definido no CSS
-                    const scrollAmount = (cardWidth + cardGap) * 2; // Rolar por 2 cartas
+                    // Mede a carta real em vez de usar valor fixo
+                    const cardEl = handArea.querySelector(".card");
+                    const cardWidth = cardEl ? cardEl.getBoundingClientRect().width : 72;
+                    const styles = getComputedStyle(handArea);
+                    const cardGap = parseFloat(styles.gap) || 6;
+                    const scrollAmount = (cardWidth + cardGap) * 2; // Rola 2 cartas
 
                     if (arrow.classList.contains("left-arrow")) {
                         handArea.scrollBy({ left: -scrollAmount, behavior: "smooth" });
