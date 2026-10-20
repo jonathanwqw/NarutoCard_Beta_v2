@@ -28,6 +28,8 @@
                 <div id="player-status-side" class="status-side">
                     <h2>Jogador</h2>
 
+                    <div id="player-combo" class="combo-display"></div>
+
                     <div class="stats-display">
                         <div class="bar-container health-bar" data-label="Vida">
                             <div id="player-health-bar-fill" class="bar-fill"></div>
@@ -52,6 +54,10 @@
                         <div id="player-hand" class="hand-area"><p>Mão Jogador</p></div>
                         <button class="scroll-arrow right-arrow" data-target="player-hand">&gt;</button>
                     </div>
+                    <div class="fusion-controls">
+                        <button id="fusion-button" class="fusion-button" title="Combinar dois jutsu em um ataque mais forte">☯ Fusão</button>
+                        <span id="fusion-hint" class="fusion-hint">Selecione duas cartas compatíveis</span>
+                    </div>
                     <div class="deck-info">
                         <span id="player-deck-count">Deck: 0</span>
                         <span id="player-discard-count">Descarte: 0</span>
@@ -61,6 +67,8 @@
                 <!-- Coluna do Oponente -->
                 <div id="opponent-status-side" class="status-side">
                     <h2 id="opponent-name-display">Oponente</h2>
+
+                    <div id="opponent-combo" class="combo-display"></div>
 
                      <div class="stats-display">
                         <div class="bar-container health-bar" data-label="Vida">

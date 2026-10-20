@@ -1259,3 +1259,154 @@ body {
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* ============================================================
+   COMBATE V4 - COMBOS ELEMENTAIS E FUSÃO DE JUTSU
+   ============================================================ */
+
+/* --- Avanço do atacante (variantes por direção) --- */
+#player-status-side.attacking-right {
+  animation: lunge-right 0.35s ease;
+}
+
+#opponent-status-side.attacking-left {
+  animation: lunge-left 0.35s ease;
+}
+
+/* --- Brilho de combo no lado --- */
+@keyframes combo-glow-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(241,196,15,0); }
+  30% { box-shadow: 0 0 24px 6px rgba(241,196,15,0.55); }
+  100% { box-shadow: 0 0 0 0 rgba(241,196,15,0); }
+}
+
+.status-side.combo-glow {
+  animation: combo-glow-pulse 0.8s ease;
+}
+
+/* --- Display de combo --- */
+.combo-display {
+  min-height: 1.1em;
+  text-align: center;
+  font-family: 'Press Start 2P', 'Courier New', monospace;
+  font-size: 0.7em;
+  letter-spacing: 0.5px;
+  margin: 2px 0 4px;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.combo-display.active {
+  opacity: 1;
+  transform: scale(1);
+  animation: combo-pop 0.35s ease;
+}
+
+@keyframes combo-pop {
+  0% { transform: scale(0.5); }
+  60% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* --- Controles de fusão --- */
+.fusion-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.fusion-button {
+  font-family: inherit;
+  font-size: 0.75em;
+  font-weight: bold;
+  padding: 5px 12px;
+  color: #fff;
+  background: linear-gradient(180deg, #9b59b6, #71368a);
+  border: 2px solid #5b2c6f;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 3px 0 #4a235a, 0 4px 10px rgba(0,0,0,0.3);
+  transition: transform 0.1s, box-shadow 0.1s, filter 0.2s;
+  white-space: nowrap;
+}
+
+.fusion-button:hover {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 0 #4a235a, 0 6px 14px rgba(0,0,0,0.4);
+}
+
+.fusion-button:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #4a235a;
+}
+
+.fusion-button.active {
+  background: linear-gradient(180deg, #f1c40f, #d68910);
+  border-color: #b9770e;
+  box-shadow: 0 3px 0 #7d6608, 0 0 16px rgba(241,196,15,0.7);
+  animation: fusion-pulse 1s ease-in-out infinite;
+}
+
+@keyframes fusion-pulse {
+  0%, 100% { box-shadow: 0 3px 0 #7d6608, 0 0 10px rgba(241,196,15,0.5); }
+  50% { box-shadow: 0 3px 0 #7d6608, 0 0 22px rgba(241,196,15,0.9); }
+}
+
+.fusion-hint {
+  font-size: 0.68em;
+  color: var(--muted);
+  opacity: 0.6;
+  transition: color 0.2s, opacity 0.2s;
+}
+
+.fusion-hint.visible {
+  color: var(--gold);
+  opacity: 1;
+}
+
+/* --- Carta selecionada para fusão --- */
+.card.fusion-selected {
+  border-color: #f1c40f !important;
+  box-shadow: 0 0 14px 4px rgba(241,196,15,0.8), inset 0 0 10px rgba(241,196,15,0.4) !important;
+  transform: translateY(-6px) scale(1.03);
+  animation: fusion-select-pulse 0.9s ease-in-out infinite;
+}
+
+@keyframes fusion-select-pulse {
+  0%, 100% { box-shadow: 0 0 10px 3px rgba(241,196,15,0.7), inset 0 0 8px rgba(241,196,15,0.3); }
+  50% { box-shadow: 0 0 20px 6px rgba(241,196,15,1), inset 0 0 14px rgba(241,196,15,0.5); }
+}
+
+/* --- Carta fusionada --- */
+.card.card-fusion {
+  border: 2px solid transparent;
+  background-image: linear-gradient(#2c3e50, #2c3e50),
+    linear-gradient(135deg, #f1c40f, #e74c3c, #9b59b6, #3498db, #f1c40f);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  box-shadow: 0 0 12px rgba(241,196,15,0.6), 0 2px 6px rgba(0,0,0,0.5);
+}
+
+.card.card-fusion:hover {
+  box-shadow: 0 0 20px rgba(241,196,15,0.9), 0 4px 10px rgba(0,0,0,0.6);
+}
+
+.card-fusion-badge {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  font-size: 0.6em;
+  font-weight: bold;
+  letter-spacing: 1px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  color: #2c3e50;
+  background: linear-gradient(90deg, #f1c40f, #f39c12);
+  box-shadow: 0 0 6px rgba(241,196,15,0.8);
+  z-index: 2;
+}

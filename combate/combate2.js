@@ -1,10 +1,9 @@
-// Naruto Pixel Card Game - Módulo de Combate v3
-// Sons + Animações + IA Melhorada + Jogabilidade Aprimorada
+// Naruto Pixel Card Game - Módulo de Combate v4
+// Combos elementais, fusão de jutsus, IA agressiva e combate aprofundado
 
 document.addEventListener("DOMContentLoaded", () => {
-    console.log("Módulo de Combate - Naruto Pixel Card Game v3 iniciado!");
+    console.log("Módulo de Combate - Naruto Pixel Card Game v4 iniciado!");
 
-    let ambientSoundActive = false;
     let battleStartTime = 0;
 
     const rivalNames = [
@@ -14,7 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ];
     let currentRivalName = "Oponente Desconhecido";
 
-    // --- Sistema de Elementos (vantagem/desvantagem) ---
+    // --- Sistema de Elementos ---
     const elementChart = {
         "Fogo":   { strong: "Vento",  weak: "Água" },
         "Água":   { strong: "Fogo",   weak: "Terra" },
@@ -24,18 +23,47 @@ document.addEventListener("DOMContentLoaded", () => {
         "Nenhum": { strong: null,     weak: null    }
     };
 
+    // Combos elementais: jutsus do mesmo elemento em sequência
+    const ELEMENT_COLORS = {
+        "Fogo": "#e67e22", "Água": "#3498db", "Vento": "#1abc9c",
+        "Terra": "#8e6e53", "Raio": "#f1c40f", "Nenhum": "#95a5a6"
+    };
+
+    // Fusões disponíveis: 2 cartas + chakra extra = jutsu poderoso
+    const fusionRecipes = [
+        { req: ["jutsu001", "jutsu001"], name: "Rasengan Gigante", cost: 50, attack: 90, effect: "aoe_bonus", element: "Vento",
+          desc: "Fusão de 2 Rasengan: 90 de dano massivo." },
+        { req: ["jutsu002", "jutsu001"], name: "Rasenshuriken", cost: 65, attack: 110, effect: "ignore_defense", element: "Vento",
+          desc: "Chidori + Rasengan: 110 de dano, ignora defesa." },
+        { req: ["jutsu004", "jutsu004"], name: "Grande Bola de Fogo", cost: 45, attack: 80, effect: "burn", effectValue: 20, duration: 2, element: "Fogo",
+          desc: "2 Bolas de Fogo: 80 de dano + queimadura 20/turno." },
+        { req: ["jutsu002", "jutsu002"], name: "Chidori Nagashi Bolts", cost: 55, attack: 95, effect: "stun", duration: 1, element: "Raio",
+          desc: "2 Chidori: 95 de dano + atordoa 1 turno." },
+        { req: ["jutsu005", "jutsu004"], name: "Vapor Escaldante", cost: 60, attack: 100, effect: "burn", effectValue: 25, duration: 2, element: "Água",
+          desc: "Água + Fogo: 100 de dano + queimadura vapor." },
+        { req: ["taijutsu001", "taijutsu002"], name: "Combo Múltiplo", cost: 30, attack: 60, effect: "multi_hit", hits: 3, element: "Nenhum",
+          desc: "Golpes rápidos: 60 dividido em 3 acertos." },
+        { req: ["jutsu012", "jutsu012"], name: "Bênção Médica", cost: 40, effect: "heal", effectValue: 100, element: "Nenhum",
+          desc: "2 Jutsus Médicos: recupera 100 de vida." },
+    ];
+
+    function findFusion(idA, idB) {
+        return fusionRecipes.find(r =>
+            (r.req[0] === idA && r.req[1] === idB) || (r.req[0] === idB && r.req[1] === idA));
+    }
+
     function getElementMultiplier(attackerElement, defenderElement) {
         if (!attackerElement || attackerElement === "Nenhum") return { mult: 1, label: "" };
         const chart = elementChart[attackerElement];
         if (!chart) return { mult: 1, label: "" };
-        if (chart.strong === defenderElement) return { mult: 1.25, label: " VANTAGEM ELEMENTAL!" };
-        if (chart.weak === defenderElement) return { mult: 0.75, label: " desvantagem elemental..." };
+        if (chart.strong === defenderElement) return { mult: 1.3, label: "⚡ VANTAGEM ELEMENTAL!" };
+        if (chart.weak === defenderElement) return { mult: 0.7, label: " desvantagem elemental..." };
         return { mult: 1, label: "" };
     }
 
-    // --- Definição da Estrutura das Cartas ---
+    // --- Estrutura das Cartas ---
     class Card {
-        constructor(id, name, type, cost, description, image, attack = 0, defenseBuff = 0, effect = null, duration = 0, critChance = 0, effectValue = 0, defensePercent = 0, summonDotDamage = 0, element = "Nenhum") {
+        constructor(id, name, type, cost, description, image, attack = 0, defenseBuff = 0, effect = null, duration = 0, critChance = 0, effectValue = 0, defensePercent = 0, summonDotDamage = 0, element = "Nenhum", hits = 1, isFusion = false) {
             this.id = id;
             this.name = name;
             this.type = type;
@@ -51,6 +79,8 @@ document.addEventListener("DOMContentLoaded", () => {
             this.effectValue = effectValue;
             this.summonDotDamage = summonDotDamage;
             this.element = element;
+            this.hits = hits;
+            this.isFusion = isFusion;
             this.level = 1;
             this.xp = 0;
         }
@@ -59,6 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const cardElement = document.createElement("div");
             cardElement.classList.add("card");
             cardElement.classList.add(`type-${this.type.toLowerCase()}`);
+            if (this.isFusion) cardElement.classList.add("card-fusion");
             cardElement.dataset.cardId = this.id;
 
             let imagePlaceholder = this.type.substring(0, 3).toUpperCase();
@@ -72,21 +103,20 @@ document.addEventListener("DOMContentLoaded", () => {
             if (this.type === "Modo") imagePlaceholder = "MOD";
 
             let statsHTML = "";
-            if (this.attack > 0) {
-                statsHTML += `<span>Atk: ${this.attack}${this.critChance > 0 ? ` (${Math.round(this.critChance * 100)}%C)` : ""}</span>`;
-            }
+            if (this.attack > 0) statsHTML += `<span>Atk: ${this.attack}${this.critChance > 0 ? ` (${Math.round(this.critChance * 100)}%C)` : ""}</span>`;
             if (this.defenseBuff > 0) statsHTML += `<span>Def: +${this.defenseBuff}</span>`;
             if (this.defensePercent > 0) statsHTML += `<span>Def%: ${Math.round(this.defensePercent * 100)}% (${this.duration}t)</span>`;
             if (this.summonDotDamage > 0) statsHTML += `<span>DoT: ${this.summonDotDamage}/${this.duration}t</span>`;
             if (statsHTML === "") statsHTML = "<span></span>";
 
             const elementBadge = this.element && this.element !== "Nenhum"
-                ? `<span class="card-element">${this.element}</span>` : "";
+                ? `<span class="card-element" style="border-color:${ELEMENT_COLORS[this.element]};color:${ELEMENT_COLORS[this.element]}">${this.element}</span>` : "";
+            const fusionBadge = this.isFusion ? `<span class="card-fusion-badge">FUSÃO</span>` : "";
 
             cardElement.innerHTML = `
                 <div class="card-name">${this.name}</div>
                 <div class="card-cost">${this.cost > 0 ? this.cost : ""}</div>
-                <div class="card-image-placeholder">${imagePlaceholder}${elementBadge}</div>
+                <div class="card-image-placeholder">${imagePlaceholder}${elementBadge}${fusionBadge}</div>
                 <div class="card-type">${this.type}</div>
                 <div class="card-desc">${this.description}</div>
                 <div class="card-stats">${statsHTML}</div>
@@ -106,6 +136,8 @@ document.addEventListener("DOMContentLoaded", () => {
         "jutsu006": { name: "Parede de Lama", type: "Buff", cost: 20, description: "Ganha 30% de Redução de Dano por 2 turnos.", defensePercent: 0.30, duration: 2, effect: "apply_defense_percent_buff" },
         "jutsu008": { name: "Amaterasu", type: "Jutsu", cost: 55, description: "Causa 30 de dano por 3 turnos.", effect: "burn", effectValue: 30, duration: 3, element: "Fogo" },
         "jutsu005": { name: "Dragão de Água", type: "Jutsu", cost: 40, description: "Causa 50 de dano de Água.", attack: 50, element: "Água" },
+        "jutsu014": { name: "Grande Brecha de Vento", type: "Jutsu", cost: 35, description: "Causa 40 de dano de Vento.", attack: 40, element: "Vento" },
+        "jutsu015": { name: "Lança de Pedra", type: "Jutsu", cost: 30, description: "Causa 40 de dano de Terra.", attack: 40, element: "Terra" },
         "invoc001": { name: "Invocação: Sapo", type: "Invocação", cost: 30, description: "Causa 15 dano/turno por 3 turnos.", effect: "summon_dot", summonDotDamage: 15, duration: 3 },
         "jutsu012": { name: "Jutsu Médico", type: "Jutsu", cost: 25, description: "Recupera 40 de Vida.", effect: "heal", effectValue: 40 },
         "item001": { name: "Kunai", type: "Item", cost: 5, description: "Causa 10 de dano.", attack: 10 },
@@ -122,29 +154,26 @@ document.addEventListener("DOMContentLoaded", () => {
         turn: 0,
         currentPlayer: "player",
         gamePhase: "setup",
-        player: {
-            health: 500, maxHealth: 500, chakra: 50, maxChakra: 380, defense: 0, maxDefense: 50,
-            attackBoost: 0, critChanceBoost: 0, statusEffects: [], deck: [], hand: [], discardPile: [],
-            canPlayCard: true, isStunned: false,
-            healthBarFill: null, chakraBarFill: null, defenseBarFill: null,
-            healthBarText: null, chakraBarText: null, defenseBarText: null,
-            healthFeedback: null, chakraFeedback: null, defenseFeedback: null,
-            statusEffectsDisplay: null, tempStatsDisplay: null, handElement: null,
-            sideElement: null
-        },
-        opponent: {
-            health: 500, maxHealth: 500, chakra: 50, maxChakra: 380, defense: 0, maxDefense: 50,
-            attackBoost: 0, critChanceBoost: 0, statusEffects: [], deck: [], hand: [], discardPile: [],
-            canPlayCard: true, isStunned: false,
-            healthBarFill: null, chakraBarFill: null, defenseBarFill: null,
-            healthBarText: null, chakraBarText: null, defenseBarText: null,
-            healthFeedback: null, chakraFeedback: null, defenseFeedback: null,
-            statusEffectsDisplay: null, tempStatsDisplay: null, handElement: null,
-            sideElement: null
-        }
+        combo: { player: { element: null, count: 0 }, opponent: { element: null, count: 0 } },
+        lastElement: { player: null, opponent: null },
+        player: createFighterState(),
+        opponent: createFighterState()
     };
 
-    // --- Elementos da UI ---
+    function createFighterState() {
+        return {
+            health: 500, maxHealth: 500, chakra: 50, maxChakra: 380, defense: 0, maxDefense: 80,
+            attackBoost: 0, critChanceBoost: 0, statusEffects: [], deck: [], hand: [], discardPile: [],
+            canPlayCard: true, isStunned: false, fusionMode: false, fusionSelected: [],
+            healthBarFill: null, chakraBarFill: null, defenseBarFill: null,
+            healthBarText: null, chakraBarText: null, defenseBarText: null,
+            healthFeedback: null, chakraFeedback: null, defenseFeedback: null,
+            statusEffectsDisplay: null, tempStatsDisplay: null, handElement: null,
+            sideElement: null, comboDisplay: null
+        };
+    }
+
+    // --- Cache de UI ---
     function cacheUIElements() {
         ["player", "opponent"].forEach(key => {
             const t = battleState[key];
@@ -161,6 +190,7 @@ document.addEventListener("DOMContentLoaded", () => {
             t.tempStatsDisplay = document.getElementById(`${key}-temp-stats`);
             t.handElement = document.getElementById(`${key}-hand`);
             t.sideElement = document.getElementById(`${key}-status-side`);
+            t.comboDisplay = document.getElementById(`${key}-combo`);
         });
     }
     cacheUIElements();
@@ -186,6 +216,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const playerDiscardCount = document.getElementById("player-discard-count");
     const opponentDeckCount = document.getElementById("opponent-deck-count");
     const opponentDiscardCount = document.getElementById("opponent-discard-count");
+    const fusionButton = document.getElementById("fusion-button");
+    const fusionHint = document.getElementById("fusion-hint");
 
     const battleResultsScreen = document.getElementById("battle-results-screen");
     const rivalNameDisplay = document.getElementById("rival-name-display");
@@ -197,7 +229,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const closeResultsButton = document.getElementById("close-results-button");
     const nextLevelButton = document.getElementById("next-level-button");
 
-    // --- Botão de Som ---
     if (soundToggleBtn) {
         soundToggleBtn.addEventListener("click", () => {
             gameAudio.init();
@@ -205,14 +236,9 @@ document.addEventListener("DOMContentLoaded", () => {
             soundToggleBtn.textContent = enabled ? "🔊" : "🔇";
         });
     }
+    document.addEventListener("click", () => { gameAudio.init(); gameAudio.resume(); }, { once: true });
 
-    // Inicializa áudio no primeiro clique (requisito dos navegadores)
-    document.addEventListener("click", () => {
-        gameAudio.init();
-        gameAudio.resume();
-    }, { once: true });
-
-    // --- Scroll da mão ---
+    // --- Scroll ---
     function initializeHandScrolling() {
         document.querySelectorAll(".scroll-arrow").forEach(arrow => {
             arrow.addEventListener("click", () => {
@@ -228,15 +254,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     initializeHandScrolling();
 
-    // --- Chakra regeneração ---
+    // --- Chakra regeneração (mais generosa) ---
     function startChakraRegeneration() {
         setInterval(() => {
             if (battleState.gamePhase === "game_over" || battleState.gamePhase === "results_screen") return;
             ["player", "opponent"].forEach(key => {
                 const t = battleState[key];
-                if (t.chakra < t.maxChakra) {
-                    t.chakra = Math.min(t.chakra + 5, t.maxChakra);
-                }
+                const regen = key === "player" ? 8 : 10; // IA regenera um pouco mais rápido
+                if (t.chakra < t.maxChakra) t.chakra = Math.min(t.chakra + regen, t.maxChakra);
             });
             updatePlayerStatsUI();
             updateOpponentStatsUI();
@@ -244,7 +269,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     startChakraRegeneration();
 
-    // --- Funções Auxiliares ---
+    // --- Auxiliares ---
+    function capitalize(str) { return str.charAt(0).toUpperCase() + str.slice(1); }
+
     function logMessage(message, cssClass = "") {
         console.log(message);
         const el = document.createElement("p");
@@ -255,9 +282,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
             messageLogElement.appendChild(el);
         }
-        while (messageLogElement.children.length > 50) {
-            messageLogElement.removeChild(messageLogElement.lastChild);
-        }
+        while (messageLogElement.children.length > 60) messageLogElement.removeChild(messageLogElement.lastChild);
     }
 
     function shuffleArray(array) {
@@ -272,15 +297,22 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!d) return null;
         return new Card(cardId, d.name, d.type, d.cost, d.description, d.image,
             d.attack, d.defenseBuff, d.effect, d.duration, d.critChance,
-            d.effectValue, d.defensePercent, d.summonDotDamage, d.element);
+            d.effectValue, d.defensePercent, d.summonDotDamage, d.element, d.hits || 1);
     }
 
-    // --- Efeitos Visuais ---
+    function createFusionCard(recipe) {
+        const c = new Card("fusion_" + recipe.name.replace(/\s/g, ""), recipe.name, "Jutsu",
+            recipe.cost, recipe.desc, null, recipe.attack || 0, 0, recipe.effect,
+            recipe.duration || 0, 0, recipe.effectValue || 0, 0, 0, recipe.element || "Nenhum",
+            recipe.hits || 1, true);
+        return c;
+    }
+
+    // --- Efeitos visuais ---
     function showTurnBanner(text, duration = 1200) {
         if (!turnBanner) return;
         turnBanner.textContent = text;
         turnBanner.classList.remove("hidden");
-        // força reflow
         void turnBanner.offsetWidth;
         turnBanner.classList.add("show");
         setTimeout(() => {
@@ -295,59 +327,69 @@ document.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => { screenFlash.className = "screen-flash"; }, duration);
     }
 
-    function animateAttack(attackerKey) {
-        const attacker = battleState[attackerKey];
-        if (!attacker.sideElement) return;
-        attacker.sideElement.classList.remove("attacking");
-        void attacker.sideElement.offsetWidth;
-        attacker.sideElement.classList.add("attacking");
-        setTimeout(() => attacker.sideElement.classList.remove("attacking"), 400);
+    function animateAttack(key, dir) {
+        const t = battleState[key];
+        if (!t.sideElement) return;
+        const cls = dir === "right" ? "attacking-right" : "attacking-left";
+        t.sideElement.classList.remove("attacking-right", "attacking-left");
+        void t.sideElement.offsetWidth;
+        t.sideElement.classList.add(cls);
+        setTimeout(() => t.sideElement.classList.remove(cls), 400);
     }
 
-    function animateDamage(targetKey, isCrit = false) {
-        const target = battleState[targetKey];
-        if (!target.sideElement) return;
+    function animateDamage(key, isCrit = false) {
+        const t = battleState[key];
+        if (!t.sideElement) return;
         const cls = isCrit ? "shake-crit" : "shake-damage";
-        target.sideElement.classList.remove("shake-damage", "shake-crit", "hit-flash", "crit-flash");
-        void target.sideElement.offsetWidth;
-        target.sideElement.classList.add(cls, isCrit ? "crit-flash" : "hit-flash");
-        setTimeout(() => target.sideElement.classList.remove(cls, "hit-flash", "crit-flash"), 600);
+        t.sideElement.classList.remove("shake-damage", "shake-crit", "hit-flash", "crit-flash");
+        void t.sideElement.offsetWidth;
+        t.sideElement.classList.add(cls, isCrit ? "crit-flash" : "hit-flash");
+        setTimeout(() => t.sideElement.classList.remove(cls, "hit-flash", "crit-flash"), 600);
     }
 
-    function animateDotDamage(targetKey) {
-        const target = battleState[targetKey];
-        if (!target.sideElement) return;
-        target.sideElement.classList.remove("shake-dot");
-        void target.sideElement.offsetWidth;
-        target.sideElement.classList.add("shake-dot");
-        setTimeout(() => target.sideElement.classList.remove("shake-dot"), 300);
+    function animateDotDamage(key) {
+        const t = battleState[key];
+        if (!t.sideElement) return;
+        t.sideElement.classList.remove("shake-dot");
+        void t.sideElement.offsetWidth;
+        t.sideElement.classList.add("shake-dot");
+        setTimeout(() => t.sideElement.classList.remove("shake-dot"), 300);
     }
 
-    function animateHeal(targetKey) {
-        const target = battleState[targetKey];
-        if (!target.sideElement) return;
-        target.sideElement.classList.remove("heal-flash");
-        void target.sideElement.offsetWidth;
-        target.sideElement.classList.add("heal-flash");
-        setTimeout(() => target.sideElement.classList.remove("heal-flash"), 600);
+    function animateHeal(key) {
+        const t = battleState[key];
+        if (!t.sideElement) return;
+        t.sideElement.classList.remove("heal-flash");
+        void t.sideElement.offsetWidth;
+        t.sideElement.classList.add("heal-flash");
+        setTimeout(() => t.sideElement.classList.remove("heal-flash"), 600);
     }
 
-    function animateChakra(targetKey) {
-        const target = battleState[targetKey];
-        if (!target.sideElement) return;
-        target.sideElement.classList.remove("chakra-flash");
-        void target.sideElement.offsetWidth;
-        target.sideElement.classList.add("chakra-flash");
-        setTimeout(() => target.sideElement.classList.remove("chakra-flash"), 500);
+    function animateChakra(key) {
+        const t = battleState[key];
+        if (!t.sideElement) return;
+        t.sideElement.classList.remove("chakra-flash");
+        void t.sideElement.offsetWidth;
+        t.sideElement.classList.add("chakra-flash");
+        setTimeout(() => t.sideElement.classList.remove("chakra-flash"), 500);
     }
 
-    function animateStatusPulse(targetKey) {
-        const target = battleState[targetKey];
-        if (!target.sideElement) return;
-        target.sideElement.classList.remove("status-active");
-        void target.sideElement.offsetWidth;
-        target.sideElement.classList.add("status-active");
-        setTimeout(() => target.sideElement.classList.remove("status-active"), 700);
+    function animateCombo(key) {
+        const t = battleState[key];
+        if (!t.sideElement) return;
+        t.sideElement.classList.remove("combo-glow");
+        void t.sideElement.offsetWidth;
+        t.sideElement.classList.add("combo-glow");
+        setTimeout(() => t.sideElement.classList.remove("combo-glow"), 800);
+    }
+
+    function animateStatusPulse(key) {
+        const t = battleState[key];
+        if (!t.sideElement) return;
+        t.sideElement.classList.remove("status-active");
+        void t.sideElement.offsetWidth;
+        t.sideElement.classList.add("status-active");
+        setTimeout(() => t.sideElement.classList.remove("status-active"), 700);
     }
 
     function triggerBarShadow(barFillElement) {
@@ -359,42 +401,75 @@ document.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => barContainer.classList.remove("active-shadow"), 2000);
     }
 
-    function showFloatingNumber(value, type, feedbackElement) {
+    function showFloatingNumber(value, type, feedbackElement, delay = 0) {
         if (!feedbackElement) return;
-        const numberElement = document.createElement("div");
-        numberElement.classList.add("floating-number", type);
-        numberElement.textContent = (value > 0 && (type === "heal" || type === "chakra-gained" || type === "defense-gained")) ? `+${value}` : `${value}`;
-        feedbackElement.appendChild(numberElement);
-        setTimeout(() => numberElement.remove(), 3600);
+        const doIt = () => {
+            const el = document.createElement("div");
+            el.classList.add("floating-number", type);
+            el.textContent = (value > 0 && (type === "heal" || type === "chakra-gained" || type === "defense-gained")) ? `+${value}` : `${value}`;
+            feedbackElement.appendChild(el);
+            setTimeout(() => el.remove(), 3600);
+        };
+        if (delay > 0) setTimeout(doIt, delay); else doIt();
     }
 
-    // --- Funções de Áudio (atalhos) ---
     function sfx(name) {
         if (!gameAudio.initialized) return;
         const map = {
-            hit: () => gameAudio.playHit(),
-            crit: () => gameAudio.playCrit(),
-            heal: () => gameAudio.playHeal(),
-            shield: () => gameAudio.playShield(),
-            card: () => gameAudio.playCard(),
-            error: () => gameAudio.playError(),
-            draw: () => gameAudio.playDraw(),
-            turn: () => gameAudio.playTurnStart(),
-            stun: () => gameAudio.playStun(),
-            burn: () => gameAudio.playBurn(),
-            poison: () => gameAudio.playPoison(),
-            chakra: () => gameAudio.playChakra(),
-            victory: () => gameAudio.playVictory(),
-            defeat: () => gameAudio.playDefeat(),
-            summon: () => gameAudio.playSummon(),
-            discard: () => gameAudio.playDiscard()
+            hit: () => gameAudio.playHit(), crit: () => gameAudio.playCrit(),
+            heal: () => gameAudio.playHeal(), shield: () => gameAudio.playShield(),
+            card: () => gameAudio.playCard(), error: () => gameAudio.playError(),
+            draw: () => gameAudio.playDraw(), turn: () => gameAudio.playTurnStart(),
+            stun: () => gameAudio.playStun(), burn: () => gameAudio.playBurn(),
+            poison: () => gameAudio.playPoison(), chakra: () => gameAudio.playChakra(),
+            victory: () => gameAudio.playVictory(), defeat: () => gameAudio.playDefeat(),
+            summon: () => gameAudio.playSummon(), discard: () => gameAudio.playDiscard(),
+            combo: () => gameAudio.playCombo(2), fusion: () => gameAudio.playFusion()
         };
         if (map[name]) map[name]();
     }
 
+    // --- Combos ---
+    function registerElementPlay(key, element) {
+        if (!element || element === "Nenhum") {
+            battleState.combo[key] = { element: null, count: 0 };
+            return { active: false, bonus: 0, count: 0 };
+        }
+        const combo = battleState.combo[key];
+        if (combo.element === element) {
+            combo.count++;
+        } else {
+            combo.element = element;
+            combo.count = 1;
+        }
+        // Bônus crescente: 2º jutsu +15%, 3º +30%, 4º+ +45%
+        const bonus = combo.count >= 2 ? Math.min(0.15 * (combo.count - 1), 0.45) : 0;
+        return { active: combo.count >= 2, bonus, count: combo.count };
+    }
+
+    function resetCombo(key) {
+        battleState.combo[key] = { element: null, count: 0 };
+        updateComboUI(key);
+    }
+
+    function updateComboUI(key) {
+        const t = battleState[key];
+        if (!t.comboDisplay) return;
+        const combo = battleState.combo[key];
+        if (combo.count >= 2 && combo.element) {
+            const pct = Math.round(Math.min(0.15 * (combo.count - 1), 0.45) * 100);
+            t.comboDisplay.textContent = `🔥 COMBO ${combo.element} x${combo.count} (+${pct}%)`;
+            t.comboDisplay.style.color = ELEMENT_COLORS[combo.element] || "#f1c40f";
+            t.comboDisplay.classList.add("active");
+        } else {
+            t.comboDisplay.textContent = "";
+            t.comboDisplay.classList.remove("active");
+        }
+    }
+
     // --- Atualização da UI ---
-    function updateTargetStatsUI(targetKey) {
-        const target = battleState[targetKey];
+    function updateTargetStatsUI(key) {
+        const target = battleState[key];
 
         const oldHP = parseFloat(target.healthBarFill.style.width) || 0;
         const newHP = target.maxHealth > 0 ? Math.max(0, (target.health / target.maxHealth) * 100) : 0;
@@ -464,12 +539,11 @@ document.addEventListener("DOMContentLoaded", () => {
         target.hand.forEach((cardInstance, index) => {
             if (playerType === "player") {
                 const cardElement = cardInstance.getHTMLElement();
-                // Marca cartas que não podem ser jogadas
-                if (battleState.player.chakra < cardInstance.cost || battleState.currentPlayer !== "player" || battleState.gamePhase !== "player_turn") {
-                    cardElement.classList.add("unplayable");
-                }
-                cardElement.onclick = () => playCardFromHand(cardInstance.id, index);
-                // Tooltip no hover
+                const notYourTurn = battleState.currentPlayer !== "player" || battleState.gamePhase !== "player_turn";
+                const cantAfford = battleState.player.chakra < cardInstance.cost;
+                if (notYourTurn || (cantAfford && !target.fusionMode)) cardElement.classList.add("unplayable");
+                if (target.fusionMode && target.fusionSelected.includes(index)) cardElement.classList.add("fusion-selected");
+                cardElement.onclick = () => handleCardClick(cardInstance.id, index);
                 cardElement.addEventListener("mouseenter", (e) => showCardTooltip(e, cardInstance));
                 cardElement.addEventListener("mouseleave", hideCardTooltip);
                 target.handElement.appendChild(cardElement);
@@ -482,43 +556,91 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // --- Tooltip simples para cartas no combate ---
-    let combatTooltip = null;
-    function showCardTooltip(event, card) {
-        if (!combatTooltip) {
-            combatTooltip = document.createElement("div");
-            combatTooltip.className = "custom-tooltip";
-            document.body.appendChild(combatTooltip);
+    // --- Modo Fusão ---
+    function toggleFusionMode() {
+        const p = battleState.player;
+        if (battleState.currentPlayer !== "player" || battleState.gamePhase !== "player_turn") {
+            logMessage("Só pode fundir no seu turno.");
+            sfx("error");
+            return;
         }
-        let content = `<h4>${card.name}</h4><p class="tooltip-cost">Custo: ${card.cost} Chakra</p><p>${card.description}</p>`;
-        if (card.element && card.element !== "Nenhum") content += `<p class="tooltip-element">Elemento: ${card.element}</p>`;
-        combatTooltip.innerHTML = content;
-        combatTooltip.classList.add("visible");
-        positionTooltip(event);
-        cardElementHover();
+        p.fusionMode = !p.fusionMode;
+        p.fusionSelected = [];
+        if (fusionButton) fusionButton.classList.toggle("active", p.fusionMode);
+        if (fusionHint) {
+            fusionHint.textContent = p.fusionMode
+                ? "Selecione 2 cartas para fundir"
+                : "";
+            fusionHint.classList.toggle("visible", p.fusionMode);
+        }
+        updateHandUI("player");
+        if (p.fusionMode) logMessage("Modo Fusão ativado! Selecione 2 cartas.", "log-system");
     }
 
-    function cardElementHover() { /* placeholder para future */ }
-
-    function hideCardTooltip() {
-        if (combatTooltip) combatTooltip.classList.remove("visible");
+    function handleCardClick(cardId, handIndex) {
+        const p = battleState.player;
+        if (p.fusionMode) {
+            handleFusionSelection(handIndex);
+        } else {
+            playCardFromHand(cardId, handIndex);
+        }
     }
 
-    function positionTooltip(event) {
-        if (!combatTooltip || !combatTooltip.classList.contains("visible")) return;
-        const PAD = 12;
-        let x = event.pageX + PAD;
-        let y = event.pageY + PAD;
-        const rect = combatTooltip.getBoundingClientRect();
-        if (x + rect.width > window.innerWidth - PAD) x = event.pageX - rect.width - PAD;
-        if (y + rect.height > window.innerHeight - PAD) y = event.pageY - rect.height - PAD;
-        combatTooltip.style.left = `${x}px`;
-        combatTooltip.style.top = `${y}px`;
+    function handleFusionSelection(handIndex) {
+        const p = battleState.player;
+        const alreadyIdx = p.fusionSelected.indexOf(handIndex);
+        if (alreadyIdx !== -1) {
+            p.fusionSelected.splice(alreadyIdx, 1);
+        } else {
+            if (p.fusionSelected.length >= 2) p.fusionSelected.shift();
+            p.fusionSelected.push(handIndex);
+        }
+
+        if (p.fusionSelected.length === 2) {
+            const [i1, i2] = p.fusionSelected;
+            const c1 = p.hand[i1], c2 = p.hand[i2];
+            if (!c1 || !c2) { p.fusionSelected = []; updateHandUI("player"); return; }
+            const recipe = findFusion(c1.id, c2.id);
+            if (recipe) {
+                attemptFusion(recipe, [i1, i2]);
+            } else {
+                logMessage(`Não há fusão entre ${c1.name} e ${c2.name}.`, "log-damage");
+                sfx("error");
+                p.fusionSelected = [];
+            }
+        }
+        updateHandUI("player");
     }
 
-    document.addEventListener("mousemove", (e) => {
-        if (combatTooltip && combatTooltip.classList.contains("visible")) positionTooltip(e);
-    });
+    function attemptFusion(recipe, indices) {
+        const p = battleState.player;
+        if (p.chakra < recipe.cost) {
+            logMessage(`Chakra insuficiente para fundir ${recipe.name} (precisa ${recipe.cost}).`, "log-damage");
+            sfx("error");
+            p.fusionSelected = [];
+            return;
+        }
+
+        // Remove as 2 cartas (maior índice primeiro)
+        const sorted = [...indices].sort((a, b) => b - a);
+        const removed = sorted.map(i => p.hand.splice(i, 1)[0]);
+        removed.forEach(c => p.discardPile.push(c.id));
+
+        // Adiciona a carta fundida
+        const fusionCard = createFusionCard(recipe);
+        p.hand.push(fusionCard);
+
+        p.fusionMode = false;
+        p.fusionSelected = [];
+        if (fusionButton) fusionButton.classList.remove("active");
+        if (fusionHint) fusionHint.classList.remove("visible");
+
+        sfx("fusion");
+        showScreenFlash("crit", 600);
+        showTurnBanner("FUSÃO!", 1200);
+        logMessage(`★ FUSÃO! ${fusionCard.name} criada (custo ${recipe.cost}). ★`, "log-critical");
+        updateAllCombatUI();
+    }
 
     function updateTurnUI() {
         if (turnCounterDisplay) turnCounterDisplay.textContent = battleState.turn;
@@ -540,6 +662,8 @@ document.addEventListener("DOMContentLoaded", () => {
         updateHandUI("opponent");
         updateTurnUI();
         updateDeckInfo();
+        updateComboUI("player");
+        updateComboUI("opponent");
     }
 
     // --- Deck ---
@@ -555,14 +679,13 @@ document.addEventListener("DOMContentLoaded", () => {
         const target = battleState[playerType];
         for (let i = 0; i < count; i++) {
             if (target.deck.length > 0) {
-                if (target.hand.length < 7) {
+                if (target.hand.length < 8) {
                     const cardId = target.deck.pop();
                     const cardInstance = createCardInstance(cardId);
                     if (cardInstance) {
                         target.hand.push(cardInstance);
-                        logMessage(`${playerType === "player" ? "Jogador" : "Oponente"} comprou ${cardInstance.name}.`, "log-system");
+                        logMessage(`${capitalize(playerType) === "Player" ? "Jogador" : "Oponente"} comprou ${cardInstance.name}.`, "log-system");
                         sfx("draw");
-                        // Animação de carta comprada
                         if (playerType === "player") {
                             setTimeout(() => {
                                 const cards = target.handElement.querySelectorAll(".card");
@@ -574,17 +697,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     logMessage(`${playerType === "player" ? "Jogador" : "Oponente"} não pode comprar (mão cheia).`);
                     target.deck.pop();
                 }
+            } else if (target.discardPile.length > 0) {
+                target.deck = [...target.discardPile];
+                target.discardPile = [];
+                shuffleArray(target.deck);
+                logMessage(`${playerType === "player" ? "Jogador" : "Oponente"} embaralhou o descarte no deck.`, "log-system");
+                i--;
             } else {
-                // Embaralha descarte de volta
-                if (target.discardPile.length > 0) {
-                    target.deck = [...target.discardPile];
-                    target.discardPile = [];
-                    shuffleArray(target.deck);
-                    logMessage(`${playerType === "player" ? "Jogador" : "Oponente"} embaralhou o descarte no deck.`, "log-system");
-                    i--; // tenta de novo
-                } else {
-                    logMessage(`${playerType === "player" ? "Jogador" : "Oponente"} sem cartas no deck!`);
-                }
+                logMessage(`${playerType === "player" ? "Jogador" : "Oponente"} sem cartas no deck!`);
             }
         }
         updateDeckInfo();
@@ -606,6 +726,7 @@ document.addEventListener("DOMContentLoaded", () => {
         battleState.turn = 1;
         battleState.currentPlayer = "player";
         battleState.gamePhase = "player_turn";
+        battleState.combo = { player: { element: null, count: 0 }, opponent: { element: null, count: 0 } };
         battleResultsScreen.classList.remove("visible");
         battleResultsScreen.classList.add("battle-results-screen-hidden");
 
@@ -621,9 +742,14 @@ document.addEventListener("DOMContentLoaded", () => {
             t.discardPile = [];
             t.isStunned = false;
             t.canPlayCard = true;
+            t.fusionMode = false;
+            t.fusionSelected = [];
             initializeDeck(type);
-            drawCard(type, 3);
+            drawCard(type, 4);
         });
+
+        if (fusionButton) fusionButton.classList.remove("active");
+        if (fusionHint) fusionHint.classList.remove("visible");
 
         showTurnBanner("SEU TURNO!");
         sfx("turn");
@@ -670,46 +796,48 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
         const cardInstance = player.hand[handIndex];
-        if (!cardInstance || cardInstance.id !== cardId) {
-            logMessage("Carta inválida.");
-            sfx("error");
-            return;
-        }
-        if (player.chakra < cardInstance.cost) {
-            logMessage(`Chakra insuficiente para ${cardInstance.name}.`);
-            sfx("error");
-            return;
-        }
+        if (!cardInstance || cardInstance.id !== cardId) { logMessage("Carta inválida."); sfx("error"); return; }
+        if (player.chakra < cardInstance.cost) { logMessage(`Chakra insuficiente para ${cardInstance.name}.`); sfx("error"); return; }
 
-        // Animação de carta saindo da mão
         const cardEls = player.handElement.querySelectorAll(".card");
         if (cardEls[handIndex]) cardEls[handIndex].classList.add("playing");
 
         const chakraSpent = cardInstance.cost;
         player.chakra -= chakraSpent;
         if (chakraSpent > 0) showFloatingNumber(-chakraSpent, "chakra-spent", player.chakraFeedback);
-        sfx("card");
+        if (gameAudio.initialized) gameAudio.playCardEffect({ type: cardInstance.type, element: cardInstance.element, effect: cardInstance.effect, defenseBuff: cardInstance.defenseBuff });
 
         player.hand.splice(handIndex, 1);
         player.discardPile.push(cardInstance.id);
         logMessage(`Jogador usou ${cardInstance.name}.`, "log-system");
-        if (gameAudio.initialized) gameAudio.playCardEffect({ type: cardInstance.type, element: cardInstance.element, effect: cardInstance.effect, defenseBuff: cardInstance.defenseBuff });
         applyCardEffect(cardInstance, "player", "opponent");
         updateAllCombatUI();
         checkWinCondition();
     }
 
+    // --- Efeito Principal da Carta ---
     function applyCardEffect(card, casterKey, targetKey) {
         const caster = battleState[casterKey];
         const target = battleState[targetKey];
 
-        // Animação de ataque se causar dano
+        // Registra combo elemental (apenas para cartas com elemento e que causam dano)
+        let comboData = { active: false, bonus: 0, count: 0 };
+        if (card.attack > 0 && card.element && card.element !== "Nenhum") {
+            comboData = registerElementPlay(casterKey, card.element);
+            if (comboData.active) {
+                logMessage(`🔥 COMBO ${card.element} x${comboData.count}! +${Math.round(comboData.bonus * 100)}% de dano.`, "log-critical");
+                sfx("combo");
+                animateCombo(casterKey);
+            }
+            updateComboUI(casterKey);
+        }
+
         if (card.attack > 0) {
-            animateAttack(casterKey);
+            animateAttack(casterKey, casterKey === "player" ? "right" : "left");
             setTimeout(() => sfx("hit"), 100);
         }
 
-        // Defesa direta da carta
+        // Defesa direta
         if (card.defenseBuff > 0) {
             const oldDef = caster.defense;
             caster.defense = Math.min(caster.maxDefense, caster.defense + card.defenseBuff);
@@ -717,65 +845,55 @@ document.addEventListener("DOMContentLoaded", () => {
             if (gained > 0) {
                 showFloatingNumber(gained, "defense-gained", caster.defenseFeedback);
                 sfx("shield");
-                animateHeal(casterKey); // flash visual de ganho
+                animateHeal(casterKey);
             }
             logMessage(`${capitalize(casterKey)} ganhou ${gained} de defesa com ${card.name}.`, "log-status");
         }
 
-        // Dano da carta
+        // Dano
         if (card.attack > 0) {
-            let totalDamage = card.attack + caster.attackBoost;
-            let isCrit = false;
-            if (Math.random() < (card.critChance + caster.critChanceBoost)) {
-                totalDamage = Math.round(totalDamage * 1.5);
-                isCrit = true;
-                logMessage("★ ACERTO CRÍTICO! ★", "log-critical");
-                sfx("crit");
-            }
-            totalDamage = Math.round(totalDamage);
+            const defenderElement = null; // elemento do defensor (poderíamos ter um por lutador)
+            const elemResult = getElementMultiplier(card.element, defenderElement);
+            const hits = card.hits || 1;
+            let totalDamage = 0;
+            let anyCrit = false;
 
-            // Redução de dano percentual do alvo
-            let effectiveDR = 0;
-            target.statusEffects.forEach(eff => {
-                if (eff.type === "defense_percent" && eff.duration > 0) effectiveDR += eff.value;
-            });
-            caster.statusEffects.forEach(eff => {
-                if (eff.type === "reduce_attack_percent" && eff.duration > 0) effectiveDR += eff.value;
-            });
-            totalDamage = Math.round(totalDamage * (1 - effectiveDR));
-            if (totalDamage < 0) totalDamage = 0;
+            for (let h = 0; h < hits; h++) {
+                let hitDamage = card.attack + caster.attackBoost;
+                let isCrit = false;
+                if (Math.random() < (card.critChance + caster.critChanceBoost)) {
+                    hitDamage = Math.round(hitDamage * 1.5);
+                    isCrit = true;
+                    anyCrit = true;
+                }
+                hitDamage = Math.round(hitDamage);
+                // Redução de dano
+                let effectiveDR = 0;
+                target.statusEffects.forEach(eff => { if (eff.type === "defense_percent" && eff.duration > 0) effectiveDR += eff.value; });
+                caster.statusEffects.forEach(eff => { if (eff.type === "reduce_attack_percent" && eff.duration > 0) effectiveDR += eff.value; });
+                hitDamage = Math.round(hitDamage * (1 - effectiveDR));
+                // Combo
+                hitDamage = Math.round(hitDamage * (1 + comboData.bonus));
+                // Elemento
+                hitDamage = Math.round(hitDamage * elemResult.mult);
+                if (hitDamage < 0) hitDamage = 0;
+                totalDamage += hitDamage;
 
-            // Vantagem elemental
-            const elemResult = getElementMultiplier(card.element, null);
-            if (elemResult.mult !== 1) {
-                totalDamage = Math.round(totalDamage * elemResult.mult);
-                if (elemResult.label) logMessage(elemResult.label, elemResult.mult > 1 ? "log-critical" : "log-damage");
-            }
-
-            logMessage(`${card.name} causa ${totalDamage} de dano!`, "log-damage");
-
-            // Dano à defesa primeiro
-            const toShield = Math.min(totalDamage, target.defense);
-            if (toShield > 0) {
-                target.defense -= toShield;
-                showFloatingNumber(-toShield, "defense-lost", target.defenseFeedback);
-                logMessage(`${toShield} absorvido pela defesa de ${capitalize(targetKey)}.`, "log-status");
-                setTimeout(() => sfx("shield"), 150);
+                if (hits > 1) {
+                    // Aplica cada hit com delay
+                    const dmg = hitDamage;
+                    setTimeout(() => dealDamageToTarget(dmg, target, targetKey, isCrit), h * 180);
+                }
             }
 
-            // Dano restante à vida
-            const toHealth = totalDamage - toShield;
-            if (toHealth > 0) {
-                target.health -= toHealth;
-                const delay = toShield > 0 ? 200 : 50;
-                setTimeout(() => {
-                    showFloatingNumber(-toHealth, isCrit ? "crit" : "damage", target.healthFeedback);
-                    animateDamage(targetKey, isCrit);
-                    if (isCrit) showScreenFlash("crit", 400);
-                }, delay);
-            } else if (toShield > 0) {
-                // Todo o dano absorvido
-                animateDamage(targetKey, false);
+            if (anyCrit) { logMessage("★ ACERTO CRÍTICO! ★", "log-critical"); sfx("crit"); }
+            if (elemResult.label) logMessage(elemResult.label, elemResult.mult > 1 ? "log-critical" : "log-damage");
+
+            if (hits === 1) {
+                logMessage(`${card.name} causa ${totalDamage} de dano!`, "log-damage");
+                dealDamageToTarget(totalDamage, target, targetKey, anyCrit);
+            } else {
+                logMessage(`${card.name} golpeia ${hits}x (${totalDamage} total)!`, "log-damage");
             }
         }
 
@@ -785,89 +903,61 @@ document.addEventListener("DOMContentLoaded", () => {
                 drawCard(casterKey, card.effectValue || 1);
                 break;
             case "heal": {
-                const healAmount = card.effectValue || 0;
+                const amt = card.effectValue || 0;
                 const oldH = caster.health;
-                caster.health = Math.min(caster.maxHealth, caster.health + healAmount);
-                const actualHeal = caster.health - oldH;
-                if (actualHeal > 0) {
-                    showFloatingNumber(actualHeal, "heal", caster.healthFeedback);
-                    animateHeal(casterKey);
-                    sfx("heal");
-                }
-                logMessage(`${capitalize(casterKey)} recuperou ${actualHeal} de vida.`, "log-heal");
+                caster.health = Math.min(caster.maxHealth, caster.health + amt);
+                const actual = caster.health - oldH;
+                if (actual > 0) { showFloatingNumber(actual, "heal", caster.healthFeedback); animateHeal(casterKey); sfx("heal"); }
+                logMessage(`${capitalize(casterKey)} recuperou ${actual} de vida.`, "log-heal");
                 break;
             }
             case "recover_chakra": {
-                const amount = card.effectValue || 0;
+                const amt = card.effectValue || 0;
                 const oldCh = caster.chakra;
-                caster.chakra = Math.min(caster.maxChakra, caster.chakra + amount);
-                const actualGain = caster.chakra - oldCh;
-                if (actualGain > 0) {
-                    showFloatingNumber(actualGain, "chakra-gained", caster.chakraFeedback);
-                    animateChakra(casterKey);
-                    sfx("chakra");
-                }
-                logMessage(`${capitalize(casterKey)} recuperou ${actualGain} de chakra.`, "log-status");
+                caster.chakra = Math.min(caster.maxChakra, caster.chakra + amt);
+                const actual = caster.chakra - oldCh;
+                if (actual > 0) { showFloatingNumber(actual, "chakra-gained", caster.chakraFeedback); animateChakra(casterKey); sfx("chakra"); }
+                logMessage(`${capitalize(casterKey)} recuperou ${actual} de chakra.`, "log-status");
                 break;
             }
             case "apply_defense_percent_buff":
-                addStatusEffect(casterKey, {
-                    id: `def_pct_${Date.now()}`,
-                    name: card.name, type: "defense_percent",
-                    description: `+${Math.round(card.defensePercent * 100)}% Redução de Dano`,
-                    value: card.defensePercent, duration: card.duration, sourceCardId: card.id
-                });
+                addStatusEffect(casterKey, { id: `def_pct_${Date.now()}`, name: card.name, type: "defense_percent",
+                    description: `+${Math.round(card.defensePercent * 100)}% Redução de Dano`, value: card.defensePercent, duration: card.duration, sourceCardId: card.id });
                 sfx("shield");
                 logMessage(`${capitalize(casterKey)} ativou ${card.name} (+${Math.round(card.defensePercent * 100)}% Red. Dano, ${card.duration}t).`, "log-status");
                 break;
             case "reduce_opponent_defense_percent":
-                addStatusEffect(targetKey, {
-                    id: `red_def_pct_${Date.now()}`,
-                    name: card.name, type: "defense_percent",
-                    description: `-${Math.round(card.effectValue * 100)}% Redução de Dano (recebe mais dano)`,
-                    value: -card.effectValue, duration: card.duration, sourceCardId: card.id
-                });
+                addStatusEffect(targetKey, { id: `red_def_pct_${Date.now()}`, name: card.name, type: "defense_percent",
+                    description: `-${Math.round(card.effectValue * 100)}% Redução de Dano`, value: -card.effectValue, duration: card.duration, sourceCardId: card.id });
                 sfx("poison");
                 logMessage(`${capitalize(targetKey)} foi afetado por ${card.name}!`, "log-damage");
                 break;
             case "burn":
-                addStatusEffect(targetKey, {
-                    id: `burn_${Date.now()}`, name: card.name, type: "burn",
-                    description: card.description, value: card.effectValue || 0,
-                    duration: card.duration, sourceCardId: card.id
-                });
+                addStatusEffect(targetKey, { id: `burn_${Date.now()}`, name: card.name, type: "burn",
+                    description: card.description, value: card.effectValue || 0, duration: card.duration, sourceCardId: card.id });
                 sfx("burn");
                 logMessage(`${capitalize(targetKey)} foi queimado por ${card.name}!`, "log-damage");
                 break;
             case "summon_dot":
-                addStatusEffect(targetKey, {
-                    id: `summon_${Date.now()}`, name: card.name, type: "summon_dot",
-                    description: card.description, value: card.summonDotDamage || 0,
-                    duration: card.duration, sourceCardId: card.id
-                });
+                addStatusEffect(targetKey, { id: `summon_${Date.now()}`, name: card.name, type: "summon_dot",
+                    description: card.description, value: card.summonDotDamage || 0, duration: card.duration, sourceCardId: card.id });
                 sfx("summon");
                 logMessage(`${card.name} invocada! Dano contínuo em ${capitalize(targetKey)}.`, "log-damage");
                 break;
             case "stun":
-                addStatusEffect(targetKey, {
-                    id: `stun_${Date.now()}`, name: card.name, type: "stun",
-                    description: "Atordoado - não pode jogar", value: 0,
-                    duration: card.duration, sourceCardId: card.id
-                });
+                addStatusEffect(targetKey, { id: `stun_${Date.now()}`, name: card.name, type: "stun",
+                    description: "Atordoado", value: 0, duration: card.duration, sourceCardId: card.id });
                 sfx("stun");
                 logMessage(`${capitalize(targetKey)} foi ATORDOADO!`, "log-critical");
                 break;
             case "buff_next_taijutsu":
-                addStatusEffect(casterKey, {
-                    id: `buff_tai_${Date.now()}`, name: card.name, type: "buff_taijutsu_atk",
-                    description: `+${card.effectValue} Atk para próximo Taijutsu`,
-                    value: card.effectValue, duration: card.duration || 99, sourceCardId: card.id
-                });
+                addStatusEffect(casterKey, { id: `buff_tai_${Date.now()}`, name: card.name, type: "buff_taijutsu_atk",
+                    description: `+${card.effectValue} Atk próximo Taijutsu`, value: card.effectValue, duration: card.duration || 99, sourceCardId: card.id });
                 logMessage(`${capitalize(casterKey)} ativou ${card.name}.`, "log-status");
                 break;
         }
 
-        // Consumir buff de taijutsu se a carta atual for Taijutsu
+        // Consome buff de taijutsu
         if (card.type === "Taijutsu") {
             const idx = caster.statusEffects.findIndex(e => e.type === "buff_taijutsu_atk" && e.duration > 0);
             if (idx !== -1) {
@@ -880,39 +970,50 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    function dealDamageToTarget(damage, target, targetKey, isCrit) {
+        if (damage <= 0) return;
+        const toShield = Math.min(damage, target.defense);
+        if (toShield > 0) {
+            target.defense -= toShield;
+            showFloatingNumber(-toShield, "defense-lost", target.defenseFeedback);
+            logMessage(`${toShield} absorvido pela defesa de ${capitalize(targetKey)}.`, "log-status");
+            sfx("shield");
+        }
+        const toHealth = damage - toShield;
+        if (toHealth > 0) {
+            target.health -= toHealth;
+            setTimeout(() => {
+                showFloatingNumber(-toHealth, isCrit ? "crit" : "damage", target.healthFeedback);
+                animateDamage(targetKey, isCrit);
+                if (isCrit) showScreenFlash("crit", 400);
+            }, toShield > 0 ? 150 : 0);
+        }
+        updateAllCombatUI();
+        checkWinCondition();
+    }
+
     function addStatusEffect(targetKey, effectData) {
         const target = battleState[targetKey];
         target.statusEffects.push(effectData);
         logMessage(`${capitalize(targetKey)} recebeu efeito: ${effectData.name || effectData.type}.`, "log-status");
         animateStatusPulse(targetKey);
-        if (effectData.type === "buff_taijutsu_atk") {
-            target.attackBoost += effectData.value;
-        }
+        if (effectData.type === "buff_taijutsu_atk") target.attackBoost += effectData.value;
     }
 
     function applyStatusEffectsAtTurnStart(entityKey) {
         const entity = battleState[entityKey];
         let hasActiveEffects = false;
-
         entity.statusEffects = entity.statusEffects.filter(effect => {
             if (effect.duration <= 0) return false;
-
             switch (effect.type) {
-                case "burn":
-                case "poison":
-                case "summon_dot": {
+                case "burn": case "poison": case "summon_dot": {
                     const dotDmg = effect.value || 0;
                     if (dotDmg > 0) {
                         entity.health -= dotDmg;
                         hasActiveEffects = true;
-                        setTimeout(() => {
-                            showFloatingNumber(-dotDmg, "damage", entity.healthFeedback);
-                            animateDotDamage(entityKey);
-                        }, 100);
+                        setTimeout(() => { showFloatingNumber(-dotDmg, "damage", entity.healthFeedback); animateDotDamage(entityKey); }, 100);
                         logMessage(`${capitalize(entityKey)} sofreu ${dotDmg} de dano de ${effect.name}.`, "log-damage");
-                        if (effect.type === "burn") sfx("burn");
-                        else if (effect.type === "poison") sfx("poison");
-                        else sfx("hit");
+                        if (effect.type === "burn") sfx("burn"); else if (effect.type === "poison") sfx("poison"); else sfx("hit");
                     }
                     break;
                 }
@@ -924,10 +1025,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         const actual = entity.health - oldH;
                         if (actual > 0) {
                             hasActiveEffects = true;
-                            setTimeout(() => {
-                                showFloatingNumber(actual, "heal", entity.healthFeedback);
-                                animateHeal(entityKey);
-                            }, 100);
+                            setTimeout(() => { showFloatingNumber(actual, "heal", entity.healthFeedback); animateHeal(entityKey); }, 100);
                             logMessage(`${capitalize(entityKey)} recuperou ${actual} de vida de ${effect.name}.`, "log-heal");
                             sfx("heal");
                         }
@@ -943,7 +1041,6 @@ document.addEventListener("DOMContentLoaded", () => {
             effect.duration--;
             return effect.duration > 0;
         });
-
         if (hasActiveEffects) animateStatusPulse(entityKey);
     }
 
@@ -965,10 +1062,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return false;
     }
 
-    function capitalize(str) {
-        return str.charAt(0).toUpperCase() + str.slice(1);
-    }
-
     function endTurn() {
         if (battleState.gamePhase === "game_over") return;
         logMessage(`Fim do turno de ${battleState.currentPlayer === "player" ? "Jogador" : "Oponente"}.`, "log-system");
@@ -981,7 +1074,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (checkWinCondition()) return;
             updateAllCombatUI();
             endTurnButton.disabled = true;
-            setTimeout(opponentTurnLogic, 1200);
+            setTimeout(opponentTurnLogic, 1000);
         } else {
             battleState.currentPlayer = "player";
             logMessage("Turno do Jogador.", "log-system");
@@ -998,7 +1091,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // --- IA do Oponente (melhorada) ---
+    // --- IA do Oponente AGRESSIVA ---
+    // A IA agora joga MÚLTIPLAS cartas por turno, prioriza agressão e nunca "passa" se puder agir.
     function opponentTurnLogic() {
         if (battleState.gamePhase === "game_over") return;
 
@@ -1009,71 +1103,122 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        logMessage("Oponente está pensando...", "log-system");
+        logMessage("Oponente está avaliando o campo...", "log-system");
+        takeOpponentAction();
+    }
+
+    // A IA pode jogar até N cartas por turno (loop de decisões)
+    function takeOpponentAction(actionsLeft = 3) {
         const opponent = battleState.opponent;
+        const player = battleState.player;
 
-        // IA estratégica: prioriza cartas por situação
-        const playableCards = opponent.hand
-            .map((card, idx) => ({ card, idx }))
-            .filter(({ card }) => opponent.chakra >= card.cost);
+        if (battleState.gamePhase === "game_over") return;
 
-        if (playableCards.length === 0) {
-            logMessage("Oponente não pode jogar nenhuma carta.");
-            setTimeout(() => endTurn(), 800);
+        if (actionsLeft <= 0) {
+            logMessage("Oponente encerra suas ações.", "log-system");
+            setTimeout(() => endTurn(), 1200);
             return;
         }
 
-        // Prioriza: cura se vida baixa, ataque se pode matar, senão maior dano
-        const hpPercent = opponent.health / opponent.maxHealth;
-        let chosen = null;
+        // Cartas jogáveis
+        const playable = opponent.hand
+            .map((card, idx) => ({ card, idx }))
+            .filter(({ card }) => opponent.chakra >= card.cost);
 
-        // Se vida baixa e tem cura, cura
-        if (hpPercent < 0.35) {
-            chosen = playableCards.find(({ card }) => card.effect === "heal");
-        }
-        // Se pode matar com ataque, ataca
-        if (!chosen) {
-            chosen = playableCards.find(({ card }) =>
-                card.attack > 0 && card.attack >= battleState.player.health);
-        }
-        // Se oponente tem defesa alta, prefere ignora-defesa ou debuff
-        if (!chosen && battleState.player.defense > 20) {
-            chosen = playableCards.find(({ card }) =>
-                card.type === "Debuff" || card.effect === "ignore_defense");
-        }
-        // Senão, joga a carta de maior dano/custo que pode pagar
-        if (!chosen) {
-            chosen = playableCards.reduce((best, current) => {
-                const bestVal = (best.card.attack || 0) + (best.card.effectValue || 0) + best.card.cost;
-                const curVal = (current.card.attack || 0) + (current.card.effectValue || 0) + current.card.cost;
-                return curVal > bestVal ? current : best;
-            });
+        // Se não tem chakra para nada, mas ainda pode regenerar... passa.
+        if (playable.length === 0) {
+            if (actionsLeft === 3) logMessage("Oponente está sem chakra suficiente e passa.", "log-system");
+            setTimeout(() => endTurn(), 1000);
+            return;
         }
 
-        if (chosen) {
-            const { card, idx } = chosen;
-            opponent.chakra -= card.cost;
-            if (card.cost > 0) showFloatingNumber(-card.cost, "chakra-spent", opponent.chakraFeedback);
-            opponent.hand.splice(idx, 1);
-            opponent.discardPile.push(card.id);
-            logMessage(`Oponente usou ${card.name}!`, "log-damage");
-            if (gameAudio.initialized) gameAudio.playCardEffect({ type: card.type, element: card.element, effect: card.effect, defenseBuff: card.defenseBuff });
-            applyCardEffect(card, "opponent", "player");
-        }
+        const chosen = pickOpponentCard(playable, opponent, player);
+        if (!chosen) { setTimeout(() => endTurn(), 800); return; }
 
+        const { card, idx } = chosen;
+        opponent.chakra -= card.cost;
+        if (card.cost > 0) showFloatingNumber(-card.cost, "chakra-spent", opponent.chakraFeedback);
+        opponent.hand.splice(idx, 1);
+        opponent.discardPile.push(card.id);
+        logMessage(`Oponente usou ${card.name}!`, "log-damage");
+        if (gameAudio.initialized) gameAudio.playCardEffect({ type: card.type, element: card.element, effect: card.effect, defenseBuff: card.defenseBuff });
+        applyCardEffect(card, "opponent", "player");
         updateAllCombatUI();
         if (checkWinCondition()) return;
-        setTimeout(endTurn, 1500);
+
+        // Continua suas ações com um pequeno delay
+        setTimeout(() => takeOpponentAction(actionsLeft - 1), 1100);
+    }
+
+    // Heurística de escolha: agressiva, valoriza dano final, cura em emergência, combo
+    function pickOpponentCard(playable, opponent, player) {
+        const hpPercent = opponent.health / opponent.maxHealth;
+        const playerHp = player.health;
+        const oppCombo = battleState.combo.opponent;
+
+        // 1. Cura emergencial
+        if (hpPercent < 0.30) {
+            const heal = playable.find(({ card }) => card.effect === "heal");
+            if (heal) return heal;
+        }
+
+        // 2. Golpe letal (pode matar agora)
+        const lethal = playable.find(({ card }) => card.attack > 0 && estimateDamage(card, opponent, player) >= playerHp);
+        if (lethal) {
+            logMessage("Oponente busca o golpe final!", "log-critical");
+            return lethal;
+        }
+
+        // 3. Manter/estender combo elemental
+        if (oppCombo.element && oppCombo.count >= 1) {
+            const sameElement = playable.filter(({ card }) => card.element === oppCombo.element && card.attack > 0);
+            if (sameElement.length > 0) {
+                return sameElement.reduce((a, b) => b.card.attack > a.card.attack ? b : a);
+            }
+        }
+
+        // 4. Se jogador tem defesa alta, procura ignorar defesa ou debuff de defesa
+        if (player.defense > 15) {
+            const ignoreDef = playable.find(({ card }) => card.effect === "ignore_defense" || card.effect === "reduce_opponent_defense_percent");
+            if (ignoreDef) return ignoreDef;
+        }
+
+        // 5. Se jogador está com muito dano contínuo possível, aplica DoT
+        if (!player.statusEffects.some(e => ["burn", "poison", "summon_dot"].includes(e.type))) {
+            const dot = playable.find(({ card }) => ["burn", "summon_dot"].includes(card.effect));
+            if (dot && playerHp > 120) return dot;
+        }
+
+        // 6. Agressivo: maior dano efetivo
+        return playable.reduce((best, current) => {
+            const bv = estimateDamage(best.card, opponent, player) + (best.card.cost * 0.3);
+            const cv = estimateDamage(current.card, opponent, player) + (current.card.cost * 0.3);
+            return cv > bv ? current : best;
+        });
+    }
+
+    function estimateDamage(card, caster, target) {
+        if (!card.attack) return 0;
+        let dmg = (card.attack + caster.attackBoost) * (card.hits || 1);
+        let dr = 0;
+        target.statusEffects.forEach(e => { if (e.type === "defense_percent") dr += e.value; });
+        dmg *= (1 - dr);
+        const elem = getElementMultiplier(card.element, null);
+        dmg *= elem.mult;
+        // considera defesa do alvo
+        const absorb = Math.min(dmg, target.defense);
+        return Math.round(dmg - absorb);
     }
 
     // --- Event Listeners ---
     endTurnButton.addEventListener("click", () => {
         if (battleState.currentPlayer === "player" && battleState.gamePhase === "player_turn") {
+            if (battleState.player.fusionMode) toggleFusionMode();
             endTurnButton.disabled = true;
             endTurn();
         }
     });
-
+    if (fusionButton) fusionButton.addEventListener("click", toggleFusionMode);
     restartBattleButton.addEventListener("click", startBattle);
     closeResultsButton.addEventListener("click", () => {
         if (battleResultTitle.textContent === "Vitória!") {
@@ -1084,10 +1229,34 @@ document.addEventListener("DOMContentLoaded", () => {
             startBattle();
         }
     });
-    nextLevelButton.addEventListener("click", () => {
-        logMessage("Iniciando próximo nível!", "log-system");
-        startBattle();
-    });
+    nextLevelButton.addEventListener("click", () => { logMessage("Iniciando próximo nível!", "log-system"); startBattle(); });
+
+    // --- Tooltip ---
+    let combatTooltip = null;
+    function showCardTooltip(event, card) {
+        if (!combatTooltip) {
+            combatTooltip = document.createElement("div");
+            combatTooltip.className = "custom-tooltip";
+            document.body.appendChild(combatTooltip);
+        }
+        let content = `<h4>${card.name}${card.isFusion ? " ★" : ""}</h4><p class="tooltip-cost">Custo: ${card.cost} Chakra</p><p>${card.description}</p>`;
+        if (card.element && card.element !== "Nenhum") content += `<p class="tooltip-element" style="color:${ELEMENT_COLORS[card.element]}">Elemento: ${card.element}</p>`;
+        combatTooltip.innerHTML = content;
+        combatTooltip.classList.add("visible");
+        positionTooltip(event);
+    }
+    function hideCardTooltip() { if (combatTooltip) combatTooltip.classList.remove("visible"); }
+    function positionTooltip(event) {
+        if (!combatTooltip || !combatTooltip.classList.contains("visible")) return;
+        const PAD = 12;
+        let x = event.pageX + PAD, y = event.pageY + PAD;
+        const rect = combatTooltip.getBoundingClientRect();
+        if (x + rect.width > window.innerWidth - PAD) x = event.pageX - rect.width - PAD;
+        if (y + rect.height > window.innerHeight - PAD) y = event.pageY - rect.height - PAD;
+        combatTooltip.style.left = `${x}px`;
+        combatTooltip.style.top = `${y}px`;
+    }
+    document.addEventListener("mousemove", (e) => { if (combatTooltip && combatTooltip.classList.contains("visible")) positionTooltip(e); });
 
     // --- Início ---
     startBattle();

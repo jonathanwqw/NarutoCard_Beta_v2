@@ -539,6 +539,60 @@ class AudioEngine {
         lfo.stop(t + 0.7);
     }
 
+    // ====== SONS DE COMBO / FUSÃO ======
+
+    // Combo crescente (encadear jutsus)
+    playCombo(level = 2) {
+        if (!this.enabled || !this.initialized) return;
+        this.resume();
+        const base = 400 + level * 80;
+        [base, base * 1.25, base * 1.5].forEach((freq, i) => {
+            setTimeout(() => this._playTone(freq, "square", 0.2, 0.13), i * 70);
+        });
+        // Brilho crescente
+        const notes = [659, 784, 988, 1319].slice(0, Math.min(level, 4));
+        notes.forEach((freq, i) => {
+            setTimeout(() => this._playTone(freq, "sine", 0.25, 0.1), 150 + i * 60);
+        });
+    }
+
+    // Fusão de jutsus (som épico de carregamento)
+    playFusion() {
+        if (!this.enabled || !this.initialized) return;
+        this.resume();
+        const t = this.ctx.currentTime;
+        // Sweep ascendente épico
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(80, t);
+        osc.frequency.exponentialRampToValueAtTime(1600, t + 0.8);
+        g.gain.setValueAtTime(0.001, t);
+        g.gain.linearRampToValueAtTime(0.2, t + 0.2);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.9);
+        osc.connect(g);
+        g.connect(this.sfxGain);
+        osc.start(t);
+        osc.stop(t + 0.9);
+        // Explosão final
+        setTimeout(() => {
+            this._playTone(1200, "square", 0.3, 0.2);
+            this._playTone(800, "sine", 0.4, 0.15);
+            const noise = this._noise(0.25);
+            const filter = this.ctx.createBiquadFilter();
+            filter.type = "highpass";
+            filter.frequency.value = 1000;
+            const ng = this.ctx.createGain();
+            ng.gain.setValueAtTime(0.25, t + 0.8);
+            ng.gain.exponentialRampToValueAtTime(0.001, t + 1.05);
+            noise.connect(filter);
+            filter.connect(ng);
+            ng.connect(this.sfxGain);
+            noise.start(t + 0.8);
+            noise.stop(t + 1.05);
+        }, 800);
+    }
+
     // ====== LOGICA PRINCIPAL DE EFEITO ======
     // Toca o som correto de acordo com o tipo/elemento da carta
     playCardEffect(card) {
