@@ -933,23 +933,25 @@ body { display: flex; flex-direction: column; }
   animation: crit-flash 0.5s ease;
 }
 
-/* --- Números flutuantes (melhorados) --- */
+/* --- Números flutuantes (melhorados - duração maior) --- */
 @keyframes float-up-fade {
-  0% { transform: translateY(0) scale(1); opacity: 1; }
-  50% { transform: translateY(-20px) scale(1.2); opacity: 1; }
-  100% { transform: translateY(-40px) scale(0.8); opacity: 0; }
+  0% { transform: translateY(0) scale(0.5); opacity: 0; }
+  10% { transform: translateY(-5px) scale(1.3); opacity: 1; }
+  20% { transform: translateY(-10px) scale(1); opacity: 1; }
+  70% { transform: translateY(-25px) scale(1); opacity: 1; }
+  100% { transform: translateY(-55px) scale(0.85); opacity: 0; }
 }
 
 .floating-number {
   position: absolute;
   right: 5px;
-  top: 0;
+  top: 50%;
   font-family: 'Press Start 2P', 'Courier New', monospace;
   font-weight: bold;
   z-index: 50;
   pointer-events: none;
-  animation: float-up-fade 1.8s ease forwards;
-  text-shadow: 1px 1px 0 #000, -1px -1px 0 #000;
+  animation: float-up-fade 3.5s ease forwards;
+  text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 0 0 8px rgba(0,0,0,0.8);
   white-space: nowrap;
 }
 
@@ -1126,3 +1128,134 @@ body { display: flex; flex-direction: column; }
 }
 
 .card-image-placeholder { position: relative; }
+
+/* ============================================================
+   POLISH DE DESIGN GERAL
+   ============================================================ */
+
+/* Fundo com textura sutil de grade */
+body {
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(230,126,34,0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(52,152,219,0.08) 0%, transparent 50%),
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+}
+
+/* Container com moldura */
+#game-container {
+  border: 2px solid var(--accent-dark);
+  border-radius: 10px;
+  box-shadow: 0 0 0 1px rgba(230,126,34,0.2), 0 10px 40px rgba(0,0,0,0.5);
+  background: linear-gradient(180deg, rgba(52,73,94,0.9), rgba(26,37,49,0.95));
+}
+
+/* Título com gradiente */
+#game-header h1 {
+  background: linear-gradient(90deg, var(--accent-light), var(--gold), var(--accent-light));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+  font-size: clamp(1rem, 3vw, 1.6rem);
+  letter-spacing: 1px;
+}
+
+/* Status side com destaque no turno ativo */
+.status-side {
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+#player-status-side {
+  border-color: rgba(46,204,113,0.4);
+}
+
+#opponent-status-side {
+  border-color: rgba(231,76,60,0.4);
+}
+
+/* Barras com brilho */
+.bar-fill {
+  box-shadow: inset 0 1px 2px rgba(255,255,255,0.3);
+  border-radius: 3px;
+}
+
+.health-bar .bar-fill {
+  background: linear-gradient(180deg, #ff6b6b, #e74c3c, #c0392b);
+}
+
+.chakra-bar .bar-fill {
+  background: linear-gradient(180deg, #5dade2, #3498db, #2471a3);
+}
+
+.defense-bar .bar-fill {
+  background: linear-gradient(180deg, #aab7b8, #95a5a6, #7f8c8d);
+}
+
+/* Cartas: moldura mais definida e sombra */
+.card {
+  border: 2px solid rgba(0,0,0,0.6);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+
+.card:hover {
+  border-color: #fff;
+}
+
+/* Log com painel */
+#message-log {
+  border: 1px solid var(--line-dark);
+  border-radius: 6px;
+  background: rgba(0,0,0,0.35);
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.4);
+}
+
+/* Botões com relevo */
+.game-button {
+  box-shadow: 0 3px 0 var(--accent-dark), 0 4px 10px rgba(0,0,0,0.3);
+  transition: transform 0.1s, box-shadow 0.1s, background-color 0.2s;
+}
+
+.game-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 0 var(--accent-dark), 0 6px 14px rgba(0,0,0,0.4);
+}
+
+.game-button:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--accent-dark);
+}
+
+/* Tela de resultados mais polida */
+#battle-results-content {
+  border: 3px solid var(--accent);
+  border-radius: 14px;
+  box-shadow: 0 0 40px rgba(230,126,34,0.5), inset 0 0 30px rgba(0,0,0,0.3);
+  background: linear-gradient(180deg, #2c3e50, #1a2531);
+}
+
+#battle-result-title {
+  font-size: clamp(1.5rem, 6vw, 2.5rem);
+  background: linear-gradient(90deg, var(--gold), var(--accent-light));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+  animation: title-pop 0.5s ease;
+}
+
+@keyframes title-pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Scrollbar estilizada */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 4px; }
+::-webkit-scrollbar-thumb {
+  background: var(--accent-dark);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }

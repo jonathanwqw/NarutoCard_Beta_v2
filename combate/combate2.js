@@ -365,7 +365,7 @@ document.addEventListener("DOMContentLoaded", () => {
         numberElement.classList.add("floating-number", type);
         numberElement.textContent = (value > 0 && (type === "heal" || type === "chakra-gained" || type === "defense-gained")) ? `+${value}` : `${value}`;
         feedbackElement.appendChild(numberElement);
-        setTimeout(() => numberElement.remove(), 2000);
+        setTimeout(() => numberElement.remove(), 3600);
     }
 
     // --- Funções de Áudio (atalhos) ---
@@ -693,6 +693,7 @@ document.addEventListener("DOMContentLoaded", () => {
         player.hand.splice(handIndex, 1);
         player.discardPile.push(cardInstance.id);
         logMessage(`Jogador usou ${cardInstance.name}.`, "log-system");
+        if (gameAudio.initialized) gameAudio.playCardEffect({ type: cardInstance.type, element: cardInstance.element, effect: cardInstance.effect, defenseBuff: cardInstance.defenseBuff });
         applyCardEffect(cardInstance, "player", "opponent");
         updateAllCombatUI();
         checkWinCondition();
@@ -1056,7 +1057,7 @@ document.addEventListener("DOMContentLoaded", () => {
             opponent.hand.splice(idx, 1);
             opponent.discardPile.push(card.id);
             logMessage(`Oponente usou ${card.name}!`, "log-damage");
-            sfx("card");
+            if (gameAudio.initialized) gameAudio.playCardEffect({ type: card.type, element: card.element, effect: card.effect, defenseBuff: card.defenseBuff });
             applyCardEffect(card, "opponent", "player");
         }
 

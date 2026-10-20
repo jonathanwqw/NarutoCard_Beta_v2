@@ -2,219 +2,24 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="0; url=interface/interface.html">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Naruto Card - Novidades Épicas!</title>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <title>Naruto Card Game</title>
     <style>
-        :root {
-            --bg: #1a1a2e;
-            --panel: rgba(40, 40, 70, 0.85);
-            --panel-2: rgba(50, 50, 80, 0.92);
-            --ink: #e0e0e0;
-            --muted: #b0b0c8;
-            --pink: #f02d7d;
-            --red: #ff6b6b;
-            --cyan: #00ffff;
-            --blue: #00aaff;
-        }
-
-        * { box-sizing: border-box; }
-
-        body {
-            font-family: 'Roboto', sans-serif;
+        html, body {
             margin: 0;
-            padding: 0;
-            background-color: var(--bg);
-            color: var(--ink);
-            line-height: 1.6;
-        }
-
-        .container {
-            width: 92%;
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 20px 0;
-        }
-
-        header {
-            background: linear-gradient(45deg, var(--pink), var(--red));
-            color: #fff;
-            padding: 1.4rem 1rem;
-            text-align: center;
-            border-bottom: 5px solid var(--cyan);
-        }
-
-        header h1 {
-            margin: 4px 0;
-            font-family: 'Press Start 2P', cursive;
-            font-size: clamp(1rem, 3.5vw, 1.8rem);
-            text-shadow: 3px 3px 0 #000;
-        }
-
-        .announcement {
-            padding: 22px;
-            margin-bottom: 28px;
-            background: var(--panel);
-            border-left: 7px solid var(--cyan);
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(0,255,255,0.25);
-        }
-
-        .announcement h2 {
-            font-family: 'Press Start 2P', cursive;
-            color: var(--red);
-            font-size: clamp(0.85rem, 2.5vw, 1.2rem);
-            margin-top: 0;
-        }
-
-        .announcement p { color: var(--muted); margin: 8px 0; }
-        .announcement strong { color: var(--cyan); }
-
-        /* Grid das seções — colunas iguais, sem cálculos frágeis */
-        .sections {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 22px;
-        }
-
-        .section {
-            background: var(--panel-2);
-            padding: 24px 20px;
-            border: 2px solid var(--pink);
-            border-radius: 10px;
-            text-align: center;
-            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s;
-            position: relative;
-            overflow: hidden;
+            height: 100%;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            font-family: 'Courier New', monospace;
             display: flex;
-            flex-direction: column;
-            min-width: 0; /* evita estouro do grid */
-        }
-
-        .section::before {
-            content: "";
-            position: absolute;
-            inset: -60%;
-            background: radial-gradient(circle, rgba(0,255,255,0.14) 0%, transparent 65%);
-            transform: rotate(45deg);
-            transition: opacity 0.5s ease;
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .section:hover::before { opacity: 1; }
-
-        .section:hover {
-            transform: translateY(-8px) scale(1.02);
-            box-shadow: 0 12px 28px rgba(240,45,125,0.45);
-            border-color: var(--cyan);
-        }
-
-        .section .icon {
-            font-size: 2.8rem;
-            margin-bottom: 12px;
-        }
-
-        .section h2 {
-            font-family: 'Press Start 2P', cursive;
-            color: var(--cyan);
-            font-size: clamp(0.75rem, 2vw, 1rem);
-            margin: 0 0 12px;
-        }
-
-        .section p {
-            font-size: 0.92rem;
-            color: var(--muted);
-            flex: 1 1 auto;
-            margin: 0 0 16px;
-        }
-
-        .section a {
-            display: inline-block;
-            padding: 12px 22px;
-            background: linear-gradient(45deg, var(--cyan), var(--blue));
-            color: var(--bg);
-            font-family: 'Press Start 2P', cursive;
-            font-size: 0.72rem;
-            text-decoration: none;
-            border-radius: 6px;
-            border: 2px solid var(--cyan);
-            box-shadow: 0 0 10px rgba(0,255,255,0.35);
-            transition: transform 0.2s, box-shadow 0.2s;
-            align-self: center;
-        }
-
-        .section a:hover {
-            transform: scale(1.06);
-            box-shadow: 0 0 20px rgba(0,255,255,0.65);
-        }
-
-        footer {
-            text-align: center;
-            padding: 22px;
-            margin-top: 30px;
-            background: var(--panel);
-            color: var(--cyan);
-            font-family: 'Press Start 2P', cursive;
-            font-size: 0.65rem;
-            border-top: 3px solid var(--pink);
-        }
-
-        footer p { margin: 0; }
-
-        /* --- Responsivo --- */
-        @media (max-width: 900px) {
-            .sections { grid-template-columns: repeat(2, 1fr); gap: 16px; }
-        }
-
-        @media (max-width: 560px) {
-            .sections { grid-template-columns: 1fr; }
-            .section { padding: 20px 16px; }
-            header h1 { font-size: 0.95rem; }
-            .announcement { padding: 16px; }
+            align-items: center;
+            justify-content: center;
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>Novidades Épicas do Lançamento!</h1>
-        <h1>Naruto Card</h1>
-    </header>
-
-    <div class="container">
-        <div class="announcement">
-            <h2>Atenção, Heróis e Heroínas!</h2>
-            <p>A contagem regressiva para o grande dia 10 foi pausada... mas a aventura NÃO PARA! Um pequeno ajuste de rota foi necessário, mas para manter a chama da batalha acesa, estou liberando <strong>BETAS EXCLUSIVAS</strong> recheadas de ação!</p>
-            <p>Seu feedback será a arma mais poderosa para forjar a versão final. Preparados para me ajudar a criar uma lenda!</p>
-            <p>Fiquem de olho!</p>
-        </div>
-
-        <div class="sections">
-            <div class="section" id="full-game-preview">
-                <div class="icon" aria-hidden="true">🎮</div>
-                <h2>Interface</h2>
-                <p>Mergulhe nos detalhes do que te espera! Visuais da interface, inventário, baús de tesouro, equipamentos, ferramentas, caixas de itens e lojas repletas de artefatos poderosos.</p>
-                <a href="interface/interface.html">Dar uma espiada</a>
-            </div>
-
-            <div class="section" id="old-version-access">
-                <div class="icon" aria-hidden="true">🕹️</div>
-                <h2>Combate</h2>
-                <p>Reviva ou descubra a estrutura de combate que deu início a tudo. Uma relíquia para os veteranos e uma aula de história para os novatos. Compare as táticas e veja a evolução!</p>
-                <a href="combate_projeto/combate.html">Jogar Versão</a>
-            </div>
-
-            <div class="section" id="combat-beta-v2">
-                <div class="icon" aria-hidden="true">⚔️</div>
-                <h2>Combate v2.0</h2>
-                <p>Entre na arena de testes e experimente um sistema de combate alternativo! Novas mecânicas, habilidades surpreendentes e estratégias inéditas estão em avaliação. Seu desempenho definirá o futuro da batalha!</p>
-                <a href="combate/combate2.html">Testar Combate v2</a>
-            </div>
-        </div>
-    </div>
-
-    <footer>
-        <p>&copy; 2025 Narutocard. Level Máximo nos Direitos Reservados.</p>
-    </footer>
+    <p>Carregando Naruto Card Game... <a href="interface/interface.html" style="color:#00ffff;">Entrar</a></p>
+    <script>window.location.replace("interface/interface.html");</script>
 </body>
 </html>

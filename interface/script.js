@@ -6,6 +6,16 @@ document.addEventListener("DOMContentLoaded", () => {
     // Inicializa áudio
     document.addEventListener("click", () => { gameAudio.init(); gameAudio.resume(); }, { once: true });
 
+    // Botão de som
+    const soundToggle = document.getElementById("sound-toggle");
+    if (soundToggle) {
+        soundToggle.addEventListener("click", () => {
+            gameAudio.init();
+            const on = gameAudio.toggle();
+            soundToggle.textContent = on ? "🔊" : "🔇";
+        });
+    }
+
     // Atalho de sons
     function sfx(name) {
         if (!gameAudio.initialized) return;
@@ -1115,7 +1125,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // --- Lógica de Navegação entre Abas ---
-    const navButtons = document.querySelectorAll(".nav-button");
+    const navButtons = document.querySelectorAll(".nav-button[id^='nav-']:not(.nav-link):not(.sound-btn)");
     const gameSections = document.querySelectorAll(".game-section");
 
     navButtons.forEach(button => {
@@ -1232,7 +1242,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         battleState.player.chakra -= cardInstance.cost;
         logMessage(`Jogador usou ${cardInstance.name}.`);
-        sfx("card");
+        if (gameAudio.initialized) gameAudio.playCardEffect({ type: cardInstance.type, element: cardInstance.element, effect: cardInstance.effect, defenseBuff: cardInstance.defenseBuff });
         applyCardEffect(cardInstance, "player", "opponent"); 
 
         // Mover carta da mão para o descarte
@@ -1561,6 +1571,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Lógica de alvo simples: sempre o jogador
                 logMessage(`Oponente usou ${cardInstance.name}.`);
                 battleState.opponent.chakra -= cardInstance.cost;
+                if (gameAudio.initialized) gameAudio.playCardEffect({ type: cardInstance.type, element: cardInstance.element, effect: cardInstance.effect, defenseBuff: cardInstance.defenseBuff });
                 applyCardEffect(cardInstance, "opponent", "player");
                 
                 battleState.opponent.hand.splice(i, 1);

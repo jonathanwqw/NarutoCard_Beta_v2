@@ -307,6 +307,274 @@ class AudioEngine {
         noise.stop(this.ctx.currentTime + 0.1);
     }
 
+    // ====== SONS POR ELEMENTO / TIPO ======
+
+    // Água: som de água corrente / splash
+    playWater() {
+        if (!this.enabled || !this.initialized) return;
+        this.resume();
+        const t = this.ctx.currentTime;
+        const noise = this._noise(0.5);
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = "lowpass";
+        filter.frequency.setValueAtTime(3000, t);
+        filter.frequency.exponentialRampToValueAtTime(400, t + 0.5);
+        filter.Q.value = 1;
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.001, t);
+        gain.gain.linearRampToValueAtTime(0.35, t + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.sfxGain);
+        noise.start(t);
+        noise.stop(t + 0.5);
+        // Tom grave de "onda"
+        const osc = this.ctx.createOscillator();
+        const og = this.ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(300, t);
+        osc.frequency.exponentialRampToValueAtTime(90, t + 0.4);
+        og.gain.setValueAtTime(0.2, t);
+        og.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+        osc.connect(og);
+        og.connect(this.sfxGain);
+        osc.start(t);
+        osc.stop(t + 0.4);
+    }
+
+    // Fogo: crepitar + whoosh
+    playFire() {
+        if (!this.enabled || !this.initialized) return;
+        this.resume();
+        const t = this.ctx.currentTime;
+        const noise = this._noise(0.45);
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = "bandpass";
+        filter.frequency.setValueAtTime(600, t);
+        filter.frequency.exponentialRampToValueAtTime(2500, t + 0.45);
+        filter.Q.value = 0.7;
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.001, t);
+        gain.gain.linearRampToValueAtTime(0.4, t + 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.sfxGain);
+        noise.start(t);
+        noise.stop(t + 0.45);
+        this._playTone(120, "sawtooth", 0.35, 0.1);
+    }
+
+    // Vento: rajada
+    playWind() {
+        if (!this.enabled || !this.initialized) return;
+        this.resume();
+        const t = this.ctx.currentTime;
+        const noise = this._noise(0.55);
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = "bandpass";
+        filter.frequency.setValueAtTime(500, t);
+        filter.frequency.linearRampToValueAtTime(4000, t + 0.3);
+        filter.frequency.linearRampToValueAtTime(1500, t + 0.55);
+        filter.Q.value = 0.5;
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.001, t);
+        gain.gain.linearRampToValueAtTime(0.3, t + 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.sfxGain);
+        noise.start(t);
+        noise.stop(t + 0.55);
+    }
+
+    // Raio: crackle elétrico + zap
+    playLightning() {
+        if (!this.enabled || !this.initialized) return;
+        this.resume();
+        const t = this.ctx.currentTime;
+        // Zap agudo
+        const osc = this.ctx.createOscillator();
+        const og = this.ctx.createGain();
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(1800, t);
+        osc.frequency.exponentialRampToValueAtTime(200, t + 0.2);
+        og.gain.setValueAtTime(0.25, t);
+        og.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+        osc.connect(og);
+        og.connect(this.sfxGain);
+        osc.start(t);
+        osc.stop(t + 0.2);
+        // Crackle (ruído agudo)
+        const noise = this._noise(0.18);
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = "highpass";
+        filter.frequency.value = 2000;
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.3, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.sfxGain);
+        noise.start(t);
+        noise.stop(t + 0.18);
+    }
+
+    // Terra: impacto pesado / tremor
+    playEarth() {
+        if (!this.enabled || !this.initialized) return;
+        this.resume();
+        const t = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const og = this.ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(90, t);
+        osc.frequency.exponentialRampToValueAtTime(40, t + 0.4);
+        og.gain.setValueAtTime(0.4, t);
+        og.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+        osc.connect(og);
+        og.connect(this.sfxGain);
+        osc.start(t);
+        osc.stop(t + 0.4);
+        const noise = this._noise(0.3);
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = "lowpass";
+        filter.frequency.value = 300;
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.3, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.sfxGain);
+        noise.start(t);
+        noise.stop(t + 0.3);
+    }
+
+    // Taijutsu: impacto seco corpo-a-corpo
+    playTaijutsu() {
+        if (!this.enabled || !this.initialized) return;
+        this.resume();
+        const t = this.ctx.currentTime;
+        const noise = this._noise(0.08);
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = "lowpass";
+        filter.frequency.setValueAtTime(1500, t);
+        filter.frequency.exponentialRampToValueAtTime(300, t + 0.08);
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.5, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.sfxGain);
+        noise.start(t);
+        noise.stop(t + 0.08);
+        this._playTone(110, "sine", 0.12, 0.35);
+    }
+
+    // Item/arma: som metálico de arma
+    playWeapon() {
+        if (!this.enabled || !this.initialized) return;
+        this.resume();
+        const t = this.ctx.currentTime;
+        [1400, 2100, 2800].forEach((freq, i) => {
+            const osc = this.ctx.createOscillator();
+            const g = this.ctx.createGain();
+            osc.type = "triangle";
+            osc.frequency.value = freq;
+            g.gain.setValueAtTime(0.001, t);
+            g.gain.linearRampToValueAtTime(0.12 - i * 0.03, t + 0.005);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 0.15 + i * 0.05);
+            osc.connect(g);
+            g.connect(this.sfxGain);
+            osc.start(t);
+            osc.stop(t + 0.25);
+        });
+    }
+
+    // Defesa: escudo de barreira
+    playDefense() {
+        if (!this.enabled || !this.initialized) return;
+        this.resume();
+        const t = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(200, t);
+        osc.frequency.exponentialRampToValueAtTime(600, t + 0.25);
+        g.gain.setValueAtTime(0.2, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+        osc.connect(g);
+        g.connect(this.sfxGain);
+        osc.start(t);
+        osc.stop(t + 0.35);
+        this._playTone(800, "triangle", 0.2, 0.15);
+    }
+
+    // Invocação: rugido grave
+    playSummonVoice() {
+        if (!this.enabled || !this.initialized) return;
+        this.resume();
+        const t = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        const lfo = this.ctx.createOscillator();
+        const lfoG = this.ctx.createGain();
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(70, t);
+        osc.frequency.linearRampToValueAtTime(50, t + 0.6);
+        lfo.type = "sine";
+        lfo.frequency.value = 25;
+        lfoG.gain.value = 12;
+        lfo.connect(lfoG);
+        lfoG.connect(osc.frequency);
+        g.gain.setValueAtTime(0.001, t);
+        g.gain.linearRampToValueAtTime(0.3, t + 0.1);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.7);
+        osc.connect(g);
+        g.connect(this.sfxGain);
+        osc.start(t);
+        lfo.start(t);
+        osc.stop(t + 0.7);
+        lfo.stop(t + 0.7);
+    }
+
+    // ====== LOGICA PRINCIPAL DE EFEITO ======
+    // Toca o som correto de acordo com o tipo/elemento da carta
+    playCardEffect(card) {
+        if (!this.enabled || !this.initialized) return;
+        const type = (card.type || "").toLowerCase();
+        const element = card.element || "Nenhum";
+        const effect = card.effect || "";
+
+        // Efeitos específicos primeiro
+        if (effect === "heal" || effect === "remove_debuffs") { this.playHeal(); return; }
+        if (effect === "recover_chakra") { this.playChakra(); return; }
+        if (effect === "burn") { this.playFire(); return; }
+        if (effect === "poison") { this.playPoison(); return; }
+        if (effect === "summon_dot") { this.playSummonVoice(); return; }
+        if (effect === "stun") { this.playStun(); return; }
+        if (type === "defesa" || effect === "apply_defense_percent_buff" || card.defenseBuff > 0) { this.playDefense(); return; }
+        if (effect === "buff_next_taijutsu" || effect === "stat_boost_regen" || effect === "stat_boost") { this.playChakra(); return; }
+
+        // Por tipo
+        if (type === "taijutsu") { this.playTaijutsu(); return; }
+        if (type === "item") { this.playWeapon(); return; }
+        if (type === "invocação") { this.playSummonVoice(); return; }
+
+        // Por elemento (jutsus)
+        switch (element) {
+            case "Água": this.playWater(); return;
+            case "Fogo": this.playFire(); return;
+            case "Vento": this.playWind(); return;
+            case "Raio": this.playLightning(); return;
+            case "Terra": this.playEarth(); return;
+        }
+
+        // Fallback
+        this.playCard();
+    }
+
     startMusic() {
         if (!this.enabled || !this.initialized || this.musicPlaying) return;
         this.resume();

@@ -73,6 +73,9 @@ body {
   font-weight: bold;
   font-size: 13px;
   transition: background-color 0.25s, transform 0.15s, box-shadow 0.2s;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
 }
 
 .nav-button:hover {
@@ -90,6 +93,24 @@ body {
 }
 
 .nav-button.active:hover { background-color: var(--accent-light); }
+
+/* Link de batalha e botão de som */
+.nav-button.nav-link {
+  background: linear-gradient(90deg, var(--danger), var(--danger-dark));
+  color: #fff;
+  border-color: var(--danger-dark);
+}
+
+.nav-button.nav-link:hover {
+  background: linear-gradient(90deg, #ff6b6b, var(--danger));
+}
+
+.nav-spacer { flex: 1; }
+
+.nav-button.sound-btn {
+  font-size: 16px;
+  padding: 6px 12px;
+}
 
 /* --- Seções do Jogo --- */
 .game-section {
