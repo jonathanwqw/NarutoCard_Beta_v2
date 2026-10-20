@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("Módulo de Combate - Naruto Pixel Card Game v4 iniciado!");
 
     let battleStartTime = 0;
+    let comboChargeActive = false;
 
     const rivalNames = [
         "Sasuke Uchiha", "Gaara", "Neji Hyuga", "Rock Lee", "Orochimaru",
@@ -250,6 +251,8 @@ document.addEventListener("DOMContentLoaded", () => {
             gameAudio.init();
             const enabled = gameAudio.toggle();
             soundToggleBtn.textContent = enabled ? "🔊" : "🔇";
+            if (!enabled) { gameAudio.stopChakraCharge(); comboChargeActive = false; }
+            else { updateComboChargeSound(); }
         });
     }
     document.addEventListener("click", () => { gameAudio.init(); gameAudio.resume(); }, { once: true });
@@ -571,13 +574,48 @@ document.addEventListener("DOMContentLoaded", () => {
         if (opponentDiscardCount) opponentDiscardCount.textContent = `Descarte: ${battleState.opponent.discardPile.length}`;
     }
 
+    // --- Detecção de cartas comboáveis na mão (fusão ou par elemental) ---
+    function computeComboableIndices(hand) {
+        const comboable = new Set();
+        // 1) Fusão: procura pares (ou duplicatas) que formem uma receita
+        for (let i = 0; i < hand.length; i++) {
+            for (let j = i + 1; j < hand.length; j++) {
+                if (findFusion(hand[i].id, hand[j].id)) {
+                    comboable.add(i);
+                    comboable.add(j);
+                }
+            }
+        }
+        // 2) Fusão com cópias do mesmo id (req [x,x]): precisa de >= 2 cópias
+        const idCounts = {};
+        hand.forEach(c => { idCounts[c.id] = (idCounts[c.id] || 0) + 1; });
+        for (let i = 0; i < hand.length; i++) {
+            if (idCounts[hand[i].id] >= 2 && findFusion(hand[i].id, hand[i].id)) {
+                comboable.add(i);
+            }
+        }
+        // 3) Combo elemental: >= 2 cartas de dano do mesmo elemento
+        const byElement = {};
+        hand.forEach((c, idx) => {
+            if (c.element && c.element !== "Nenhum" && c.attack > 0) {
+                (byElement[c.element] = byElement[c.element] || []).push(idx);
+            }
+        });
+        Object.values(byElement).forEach(arr => {
+            if (arr.length >= 2) arr.forEach(idx => comboable.add(idx));
+        });
+        return comboable;
+    }
+
     function updateHandUI(playerType) {
         const target = battleState[playerType];
         target.handElement.innerHTML = "";
         if (target.hand.length === 0) {
             target.handElement.innerHTML = `<p>Mão Vazia</p>`;
+            if (playerType === "player") updateComboChargeSound();
             return;
         }
+        const comboableIndices = playerType === "player" ? computeComboableIndices(target.hand) : new Set();
         target.hand.forEach((cardInstance, index) => {
             if (playerType === "player") {
                 const cardElement = cardInstance.getHTMLElement();
@@ -585,6 +623,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const cantAfford = battleState.player.chakra < cardInstance.cost;
                 if (notYourTurn || (cantAfford && !target.fusionMode)) cardElement.classList.add("unplayable");
                 if (target.fusionMode && target.fusionSelected.includes(index)) cardElement.classList.add("fusion-selected");
+                if (comboableIndices.has(index)) cardElement.classList.add("comboable");
                 cardElement.onclick = () => handleCardClick(cardInstance.id, index);
                 cardElement.addEventListener("mouseenter", (e) => showCardTooltip(e, cardInstance));
                 cardElement.addEventListener("mouseleave", hideCardTooltip);
@@ -596,6 +635,21 @@ document.addEventListener("DOMContentLoaded", () => {
                 target.handElement.appendChild(cardBackElement);
             }
         });
+        if (playerType === "player") updateComboChargeSound();
+    }
+
+    // --- Som contínuo de chakra sendo carregado quando há cartas comboáveis ---
+    function updateComboChargeSound() {
+        const p = battleState.player;
+        const onMyTurn = battleState.currentPlayer === "player" && battleState.gamePhase === "player_turn";
+        const hasCombo = onMyTurn && p.hand.length > 0 && computeComboableIndices(p.hand).size > 0;
+        if (hasCombo && !comboChargeActive) {
+            comboChargeActive = true;
+            if (gameAudio.initialized) gameAudio.startChakraCharge();
+        } else if (!hasCombo && comboChargeActive) {
+            comboChargeActive = false;
+            if (gameAudio.initialized) gameAudio.stopChakraCharge();
+        }
     }
 
     // --- Modo Fusão ---
@@ -805,6 +859,8 @@ document.addEventListener("DOMContentLoaded", () => {
     function showResultsScreen(playerWon) {
         battleState.gamePhase = "results_screen";
         gameAudio.stopMusic();
+        gameAudio.stopChakraCharge();
+        comboChargeActive = false;
         const durationMs = Date.now() - battleStartTime;
         const minutes = Math.floor(durationMs / 60000);
         const seconds = Math.floor((durationMs % 60000) / 1000);
@@ -1142,6 +1198,8 @@ document.addEventListener("DOMContentLoaded", () => {
             showTurnBanner("TURNO DO OPONENTE", 1000);
             applyStatusEffectsAtTurnStart("opponent");
             if (checkWinCondition()) return;
+            drawCard("opponent", 1);
+            battleState.opponent.isStunned = false;
             updateAllCombatUI();
             endTurnButton.disabled = true;
             setTimeout(opponentTurnLogic, 1000);

@@ -9,6 +9,9 @@ class AudioEngine {
         this.sfxGain = null;
         this.musicPlaying = false;
         this.musicOscillators = [];
+        this.chargePlaying = false;
+        this.chargeNodes = [];
+        this._chargeTimeout = null;
         this.enabled = true;
         this.initialized = false;
     }
@@ -625,6 +628,80 @@ class AudioEngine {
             setTimeout(() => this._playTone(freq, "sine", 0.3, 0.14), i * 90);
         });
         setTimeout(() => this._playTone(1047, "triangle", 0.5, 0.1), 380);
+    }
+
+    // ====== CHAKRA CARREGANDO (som contínuo) ======
+    // Loop suave de energia crescente — toca enquanto há cartas comboáveis na mão
+    startChakraCharge() {
+        if (!this.enabled || !this.initialized || this.chargePlaying) return;
+        this.resume();
+        this.chargePlaying = true;
+        this.chargeNodes = [];
+        this._chargeLoop();
+    }
+
+    _chargeLoop() {
+        if (!this.chargePlaying || !this.ctx) return;
+        const t = this.ctx.currentTime;
+        const dur = 1.6;
+
+        // Drone grave pulsante (base do "hum" de chakra)
+        const osc1 = this.ctx.createOscillator();
+        const g1 = this.ctx.createGain();
+        osc1.type = "sawtooth";
+        osc1.frequency.setValueAtTime(70, t);
+        osc1.frequency.linearRampToValueAtTime(120, t + dur);
+        g1.gain.setValueAtTime(0.001, t);
+        g1.gain.linearRampToValueAtTime(0.05, t + 0.3);
+        g1.gain.linearRampToValueAtTime(0.001, t + dur);
+        osc1.connect(g1); g1.connect(this.musicGain);
+        osc1.start(t); osc1.stop(t + dur);
+
+        // Tom médio com vibrato (sensação de energia subindo)
+        const osc2 = this.ctx.createOscillator();
+        const g2 = this.ctx.createGain();
+        osc2.type = "triangle";
+        osc2.frequency.setValueAtTime(330, t);
+        osc2.frequency.exponentialRampToValueAtTime(523, t + dur);
+        const lfo = this.ctx.createOscillator();
+        const lfoG = this.ctx.createGain();
+        lfo.frequency.value = 6;
+        lfoG.gain.value = 8;
+        lfo.connect(lfoG); lfoG.connect(osc2.frequency);
+        g2.gain.setValueAtTime(0.001, t);
+        g2.gain.linearRampToValueAtTime(0.035, t + 0.4);
+        g2.gain.linearRampToValueAtTime(0.001, t + dur);
+        osc2.connect(g2); g2.connect(this.musicGain);
+        osc2.start(t); lfo.start(t); osc2.stop(t + dur); lfo.stop(t + dur);
+
+        // Sopro de energia (ruído filtrado em ascensão)
+        const noise = this._noise(dur);
+        const bp = this.ctx.createBiquadFilter();
+        bp.type = "bandpass";
+        bp.frequency.setValueAtTime(400, t);
+        bp.frequency.exponentialRampToValueAtTime(1400, t + dur);
+        bp.Q.value = 1.2;
+        const g3 = this.ctx.createGain();
+        g3.gain.setValueAtTime(0.001, t);
+        g3.gain.linearRampToValueAtTime(0.03, t + 0.5);
+        g3.gain.linearRampToValueAtTime(0.001, t + dur);
+        noise.connect(bp); bp.connect(g3); g3.connect(this.musicGain);
+        noise.start(t); noise.stop(t + dur);
+
+        this.chargeNodes = [osc1, osc2, lfo];
+
+        this._chargeTimeout = setTimeout(() => {
+            if (this.chargePlaying) this._chargeLoop();
+        }, dur * 1000);
+    }
+
+    stopChakraCharge() {
+        this.chargePlaying = false;
+        if (this._chargeTimeout) clearTimeout(this._chargeTimeout);
+        if (this.chargeNodes) {
+            this.chargeNodes.forEach(osc => { try { osc.stop(); } catch (e) {} });
+        }
+        this.chargeNodes = [];
     }
 
     // ====== LOGICA PRINCIPAL DE EFEITO ======

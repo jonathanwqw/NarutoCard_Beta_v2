@@ -1432,3 +1432,39 @@ body {
   box-shadow: 0 0 6px rgba(241,196,15,0.8);
   z-index: 2;
 }
+
+/* ============================================================
+   CARTA COMBOÁVEL - borda de chakra pulsante
+   ============================================================ */
+.card.comboable {
+  border: 2px solid #1abc9c;
+  box-shadow: 0 0 6px rgba(26,188,156,0.7), inset 0 0 8px rgba(26,188,156,0.25);
+  animation: comboable-pulse 1.3s ease-in-out infinite;
+}
+
+.card.comboable::after {
+  content: "⛓";
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 0.7em;
+  filter: drop-shadow(0 0 3px rgba(26,188,156,0.9));
+  z-index: 3;
+  pointer-events: none;
+}
+
+.card.comboable:hover {
+  border-color: #1abc9c;
+  box-shadow: 0 0 14px 3px rgba(26,188,156,0.9), 0 4px 12px rgba(0,0,0,0.5);
+}
+
+@keyframes comboable-pulse {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(26,188,156,0.55), inset 0 0 6px rgba(26,188,156,0.2);
+    border-color: #16a085;
+  }
+  50% {
+    box-shadow: 0 0 16px 4px rgba(26,188,156,1), inset 0 0 12px rgba(26,188,156,0.45);
+    border-color: #1abc9c;
+  }
+}
