@@ -30,7 +30,7 @@
             symbol: "\uD83C\uDF43",
             color: "#3fae5b",
             desc: "Ninjas de Konohagakure. Equilibrados entre Taijutsu, Ninjutsu e trabalho em equipe.",
-            cardPool: ["jutsu001", "jutsu003", "taijutsu001", "taijutsu002", "taijutsu003", "jutsu014", "jutsu012", "buff001", "item001", "item003", "item006", "armor001", "armor002"],
+            cardPool: ["jutsu001", "jutsu003", "jutsu030", "jutsu031", "jutsu032", "jutsu056", "jutsu012", "jutsu013", "taijutsu001", "taijutsu002", "taijutsu003", "buff001", "item001", "item003", "item006", "armor001", "armor002"],
             characters: {
                 naruto: {
                     id: "naruto", name: "Naruto Uzumaki", clan: "folha", element: "Vento",
@@ -114,7 +114,7 @@
             symbol: "\uD83C\uDFDC",
             color: "#d9a441",
             desc: "Ninjas de Sunagakure. Mestres da manipulação de areia, marionetes e vento do deserto.",
-            cardPool: ["jutsu015", "jutsu006", "taijutsu001", "taijutsu002", "jutsu012", "debuff001", "item001", "item002", "item006", "item010", "armor001", "weapon001"],
+            cardPool: ["jutsu015", "jutsu006", "jutsu012", "jutsu042", "jutsu043", "jutsu044", "jutsu045", "taijutsu001", "taijutsu002", "debuff001", "item001", "item002", "item006", "item010", "armor001", "weapon001"],
             characters: {
                 gaara: {
                     id: "gaara", name: "Gaara", clan: "areia", element: "Terra",
@@ -162,7 +162,7 @@
             symbol: "\uD83C\uDF0A",
             color: "#3a86b5",
             desc: "Ninjas de Kirigakure. Assassinos silenciosos que dominam a água e o kenjutsu.",
-            cardPool: ["jutsu005", "jutsu017", "jutsu002", "taijutsu001", "taijutsu002", "jutsu012", "item001", "item003", "item004", "item006", "weapon001", "armor001"],
+            cardPool: ["jutsu005", "jutsu017", "jutsu002", "jutsu012", "jutsu036", "jutsu037", "jutsu038", "jutsu039", "jutsu049", "taijutsu001", "taijutsu002", "item001", "item003", "item004", "item006", "weapon001", "armor001"],
             characters: {
                 zabuza: {
                     id: "zabuza", name: "Zabuza Momochi", clan: "nevoa", element: "Água",
@@ -210,7 +210,7 @@
             symbol: "\u26A1",
             color: "#e0c341",
             desc: "Ninjas de Kumogakure. Velocidade e poder elétrico incomparáveis.",
-            cardPool: ["jutsu002", "jutsu016", "jutsu019", "jutsu020", "taijutsu001", "taijutsu003", "buff003", "item001", "item002", "item010", "armor001", "weapon001"],
+            cardPool: ["jutsu002", "jutsu016", "jutsu019", "jutsu020", "jutsu047", "jutsu048", "taijutsu001", "taijutsu003", "buff003", "item001", "item002", "item010", "armor001", "weapon001"],
             characters: {
                 killerbee: {
                     id: "killerbee", name: "Killer Bee", clan: "nuvem", element: "Raio",
@@ -249,7 +249,7 @@
             symbol: "\uD83E\uDEA8",
             color: "#a06a3a",
             desc: "Ninjas de Iwagakure. Robôs humanos: resistentes, explosivos e implacáveis.",
-            cardPool: ["jutsu015", "jutsu006", "taijutsu001", "taijutsu002", "taijutsu003", "item005", "item001", "item002", "item010", "armor001", "armor002", "weapon001"],
+            cardPool: ["jutsu015", "jutsu006", "jutsu042", "jutsu043", "jutsu044", "jutsu045", "jutsu012", "taijutsu001", "taijutsu002", "taijutsu003", "item005", "item001", "item002", "item010", "armor001", "armor002", "weapon001"],
             characters: {
                 deidara: {
                     id: "deidara", name: "Deidara", clan: "pedra", element: "Terra",
@@ -288,7 +288,7 @@
             symbol: "\u2601",
             color: "#b5323a",
             desc: "Organização de ninjas renegados de elite. Poder absoluto sem lealdade a vilas.",
-            cardPool: ["jutsu008", "jutsu018", "jutsu013", "jutsu010", "jutsu009", "jutsu002", "debuff001", "debuff002", "debuff003", "item001", "item007", "item008", "armor001"],
+            cardPool: ["jutsu008", "jutsu018", "jutsu010", "jutsu009", "jutsu002", "jutsu013", "jutsu033", "jutsu034", "jutsu035", "jutsu051", "jutsu052", "jutsu053", "jutsu054", "debuff001", "debuff002", "debuff003", "item001", "item007", "item008", "armor001"],
             characters: {
                 itachi: {
                     id: "itachi", name: "Itachi Uchiha", clan: "akatsuki", element: "Fogo",
@@ -375,9 +375,7 @@
         charId: null,
         attributes: { forca: 0, agilidade: 0, chakra: 0, vitalidade: 0, controle: 0 },
         points: ATTR_POINTS_CREATION,
-        coins: STARTING_COINS,
-        purchased: {}, // cardId -> qtd comprada
-        cart: [] // ids no carrinho de compra inicial
+        jutsuPicks: [] // jutsus escolhidos (até 5, diferentes, exceto o principal)
     };
 
     // Personagem criado e confirmado (em memória).
@@ -403,9 +401,7 @@
             creationState.charId = null;
             creationState.attributes = { forca: 0, agilidade: 0, chakra: 0, vitalidade: 0, controle: 0 };
             creationState.points = ATTR_POINTS_CREATION;
-            creationState.coins = STARTING_COINS;
-            creationState.purchased = {};
-            creationState.cart = [];
+            creationState.jutsuPicks = [];
         }
     };
 

@@ -1295,6 +1295,20 @@ h1 {
 
 .cc-buy-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
+.cc-shop-wrap.cc-picked .card,
+.card.cc-picked {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 12px rgba(230,126,34,0.7);
+}
+
+.cc-picked .cc-buy-btn,
+.cc-buy-btn.cc-picked {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent-dark);
+}
+
 /* Resumo */
 .cc-summary {
   display: flex;

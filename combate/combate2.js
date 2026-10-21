@@ -13,6 +13,19 @@ document.addEventListener("DOMContentLoaded", () => {
         "Kisame Hoshigaki", "Deidara", "Sasori", "Pain (Tendo)", "Konan"
     ];
     let currentRivalName = "Oponente Desconhecido";
+    let playerClanPool = [];
+    let playerClanName = null;
+    let wonJutsus = [];
+
+    // Pools de jutsus por clã — usados para conceder um jutsu ao vencer.
+    const clansForCombat = {
+        folha:    { name: "Clã da Folha",  pool: ["jutsu030", "jutsu031", "jutsu032", "jutsu056", "jutsu012", "jutsu003"] },
+        areia:    { name: "Clã da Areia",  pool: ["jutsu006", "jutsu042", "jutsu043", "jutsu044", "jutsu045", "jutsu012"] },
+        nevoa:    { name: "Clã da Névoa",  pool: ["jutsu036", "jutsu037", "jutsu038", "jutsu039", "jutsu049", "jutsu002"] },
+        nuvem:    { name: "Clã da Nuvem",  pool: ["jutsu016", "jutsu019", "jutsu020", "jutsu047", "jutsu048", "jutsu046"] },
+        pedra:    { name: "Clã da Pedra",  pool: ["jutsu042", "jutsu043", "jutsu044", "jutsu045", "jutsu015", "jutsu006"] },
+        akatsuki: { name: "Akatsuki",      pool: ["jutsu033", "jutsu034", "jutsu035", "jutsu051", "jutsu052", "jutsu053", "jutsu054", "jutsu010", "jutsu009", "jutsu018"] }
+    };
 
     // Elemento temático de cada rival (usado para vantagem/desvantagem elemental)
     const rivalElements = {
@@ -162,6 +175,36 @@ document.addEventListener("DOMContentLoaded", () => {
         "jutsu019": { name: "Chidori Senbon", type: "Jutsu", cost: 25, description: "Causa 30 de dano de Raio.", attack: 30, element: "Raio" },
         "jutsu020": { name: "Kunai Envenenada", type: "Jutsu", cost: 20, description: "Causa sangramento: 2 PV a cada 3s por 4 ciclos.", effect: "bleed", effectValue: 2, duration: 4, attack: 10 },
         "jutsu021": { name: "Corte Profundo", type: "Jutsu", cost: 30, description: "Sangramento forte: 3 PV a cada 3s por 4 ciclos.", effect: "bleed", effectValue: 3, duration: 4, attack: 15 },
+        "jutsu030": { name: "Oodama Rasengan", type: "Jutsu", cost: 50, description: "Causa 60 de dano de Vento.", attack: 60, element: "Vento" },
+        "jutsu031": { name: "Clone das Sombras Múltiplo", type: "Jutsu", cost: 25, description: "Compra 2 cartas.", effect: "draw_card", effectValue: 2 },
+        "jutsu032": { name: "Bola de Vácuo", type: "Jutsu", cost: 30, description: "Causa 38 de dano de Vento.", attack: 38, element: "Vento" },
+        "jutsu033": { name: "Flor de Fênix", type: "Jutsu", cost: 30, description: "Causa 55 de dano de Fogo em vários projéteis.", attack: 55, hits: 5, element: "Fogo" },
+        "jutsu034": { name: "Grande Bola de Fogo", type: "Jutsu", cost: 45, description: "Causa 60 de dano de Fogo e queima.", attack: 60, effect: "burn", effectValue: 15, duration: 2, element: "Fogo" },
+        "jutsu035": { name: "Chamas do Dragão", type: "Jutsu", cost: 40, description: "Causa 50 de dano de Fogo e queima.", attack: 50, effect: "burn", effectValue: 10, duration: 2, element: "Fogo" },
+        "jutsu036": { name: "Dragão de Água Explosivo", type: "Jutsu", cost: 45, description: "Causa 55 de dano de Água em área.", attack: 55, element: "Água", effect: "area_attack" },
+        "jutsu037": { name: "Ondas de Água", type: "Jutsu", cost: 30, description: "Causa 40 de dano de Água.", attack: 40, element: "Água" },
+        "jutsu038": { name: "Prisão de Água", type: "Jutsu", cost: 35, description: "Descarta 1 carta da mão inimiga.", effect: "opponent_discard", effectValue: 1 },
+        "jutsu039": { name: "Espelhos de Gelo", type: "Jutsu", cost: 45, description: "Causa 60 de dano de Água em 3 acertos.", attack: 60, hits: 3, element: "Água" },
+        "jutsu040": { name: "Corte de Lâmina de Vento", type: "Jutsu", cost: 35, description: "Causa 45 de dano de Vento.", attack: 45, element: "Vento" },
+        "jutsu041": { name: "Grande Queda de Vento", type: "Jutsu", cost: 40, description: "Causa 55 de dano de Vento em área.", attack: 55, element: "Vento", effect: "area_attack" },
+        "jutsu042": { name: "Grande Muralha de Terra", type: "Jutsu", cost: 30, description: "Ganha 30% de Defesa por 2 turnos.", defensePercent: 0.30, duration: 2, effect: "apply_defense_percent_buff" },
+        "jutsu043": { name: "Dragão de Terra", type: "Jutsu", cost: 40, description: "Causa 52 de dano de Terra.", attack: 52, element: "Terra" },
+        "jutsu044": { name: "Fissura Terrestre", type: "Jutsu", cost: 35, description: "Causa 48 de dano de Terra.", attack: 48, element: "Terra" },
+        "jutsu045": { name: "Poeira Explosiva", type: "Jutsu", cost: 55, description: "Causa 70 de dano de Terra que ignora defesa.", attack: 70, effect: "ignore_defense", element: "Terra" },
+        "jutsu046": { name: "Trovão Assassino", type: "Jutsu", cost: 40, description: "Causa 55 de dano de Raio.", attack: 55, element: "Raio" },
+        "jutsu047": { name: "Armadura de Raio", type: "Jutsu", cost: 30, description: "Ganha 40 de Defesa por 2 turnos.", defenseBuff: 40, duration: 2 },
+        "jutsu048": { name: "Lariat de Raio", type: "Jutsu", cost: 45, description: "Causa 65 de dano de Raio e atordoa.", attack: 65, effect: "stun", duration: 1, element: "Raio" },
+        "jutsu049": { name: "Tubarão Faminto", type: "Jutsu", cost: 35, description: "Causa 45 de dano de Água e drena chakra.", attack: 45, element: "Água", effect: "chakra_drain", effectValue: 10 },
+        "jutsu050": { name: "Bijuu Dama", type: "Jutsu", cost: 70, description: "Causa 90 de dano que ignora defesa.", attack: 90, effect: "ignore_defense" },
+        "jutsu051": { name: "Flores Demôniacas", type: "Jutsu", cost: 30, description: "50% de chance do inimigo errar.", effect: "enemy_attack_fail_chance", effectValue: 0.5, duration: 1 },
+        "jutsu052": { name: "Amaterasu Negra", type: "Jutsu", cost: 55, description: "Causa 35 de dano de Fogo por 3 turnos.", effect: "burn", effectValue: 35, duration: 3, element: "Fogo" },
+        "jutsu053": { name: "Shinra Tensei", type: "Jutsu", cost: 50, description: "Bloqueia todo o dano no próximo turno.", effect: "block_all_damage", duration: 1 },
+        "jutsu054": { name: "Lâminas de Papel", type: "Jutsu", cost: 25, description: "Causa 35 de dano de Vento.", attack: 35, element: "Vento" },
+        "jutsu055": { name: "Palmas Gêmeas", type: "Jutsu", cost: 25, description: "Causa 30 de dano e reduz a defesa inimiga.", attack: 30, effect: "reduce_opponent_defense_percent", effectValue: 0.15, duration: 2 },
+        "jutsu056": { name: "Rasengan Gigante", type: "Jutsu", cost: 55, description: "Causa 75 de dano de Vento.", attack: 75, element: "Vento" },
+        "jutsu009": { name: "Susanoo Ribcage", type: "Jutsu", cost: 50, description: "Bloqueia todo o dano no próximo turno.", effect: "block_all_damage", duration: 1 },
+        "jutsu010": { name: "Kamui (Curto Alcance)", type: "Jutsu", cost: 70, description: "Remove uma carta aleatória da mão inimiga.", effect: "opponent_discard", effectValue: 1 },
+        "jutsu016": { name: "Pantera Negra de Raio", type: "Jutsu", cost: 45, description: "Causa 55 de dano de Raio.", attack: 55, element: "Raio" },
         "item004": { name: "Antídoto", type: "Item", cost: 15, description: "Remove sangramento e venenos.", effect: "cleanse_bleed" },
         "item005": { name: "Bandagem Ninja", type: "Item", cost: 20, description: "Remove sangramento e cura 25 de Vida.", effect: "cleanse_bleed", effectValue: 25 },
     };
@@ -773,8 +816,14 @@ document.addEventListener("DOMContentLoaded", () => {
     function initializeDeck(targetType) {
         const target = battleState[targetType];
         target.deck = [];
+        if (targetType === "player" && wonJutsus.length > 0) {
+            // Jutsus conquistados ficam garantidos no deck do jogador.
+            wonJutsus.forEach(id => target.deck.push(id));
+        }
         const allCardIds = Object.keys(cardDatabase);
-        for (let i = 0; i < 20; i++) target.deck.push(allCardIds[Math.floor(Math.random() * allCardIds.length)]);
+        while (target.deck.length < 20) {
+            target.deck.push(allCardIds[Math.floor(Math.random() * allCardIds.length)]);
+        }
         shuffleArray(target.deck);
     }
 
@@ -816,6 +865,19 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- Batalha ---
     function startBattle() {
         logMessage("Nova batalha iniciada!", "log-system");
+
+        // Lê o clã/personagem passado pela interface via URL (memória da página não persiste).
+        try {
+            const params = new URLSearchParams(window.location.search);
+            const clanParam = params.get("clan");
+            if (clanParam && !playerClanName) {
+                playerClanName = clansForCombat[clanParam] ? clansForCombat[clanParam].name : clanParam;
+                playerClanPool = clansForCombat[clanParam] ? clansForCombat[clanParam].pool.slice() : [];
+            }
+            const charParam = params.get("char");
+            if (charParam) battleState.player.characterName = charParam;
+        } catch (e) { /* URLSearchParams indisponível */ }
+
         currentRivalName = rivalNames[Math.floor(Math.random() * rivalNames.length)];
         logMessage(`Seu oponente é: ${currentRivalName}`, "log-system");
         if (opponentNameDisplay) opponentNameDisplay.textContent = currentRivalName;
@@ -871,7 +933,8 @@ document.addEventListener("DOMContentLoaded", () => {
             t.defense = 0;
             t.attackBoost = 0;
             t.critChanceBoost = 0;
-            t.statusEffects = [];            t.hand = [];
+            t.statusEffects = [];
+            t.hand = [];
             t.discardPile = [];
             t.isStunned = false;
             t.canPlayCard = true;
@@ -910,6 +973,7 @@ document.addEventListener("DOMContentLoaded", () => {
             resultTrophies.textContent = "+25"; resultCoins.textContent = "+100"; resultStars.textContent = "★★★";
             nextLevelButton.style.display = "inline-block";
             closeResultsButton.textContent = "Menu Principal";
+            grantClanJutsuReward();
         } else {
             battleResultTitle.textContent = "Derrota!";
             sfx("defeat");
@@ -921,6 +985,22 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         battleResultsScreen.classList.remove("battle-results-screen-hidden");
         battleResultsScreen.classList.add("visible");
+    }
+
+    // Recompensa de vitória: ganha 1 jutsu aleatório do clã escolhido.
+    function grantClanJutsuReward() {
+        if (!playerClanPool || playerClanPool.length === 0) return;
+        const pool = playerClanPool.filter(id => wonJutsus.indexOf(id) === -1);
+        if (pool.length === 0) {
+            logMessage("Você já domina todos os jutsus do seu clã!", "log-system");
+            return;
+        }
+        const reward = pool[Math.floor(Math.random() * pool.length)];
+        wonJutsus.push(reward);
+        const name = cardDatabase[reward] ? cardDatabase[reward].name : reward;
+        logMessage(`🏆 Recompensa de vitória: novo jutsu do clã — ${name}!`, "log-critical");
+        sfx("summon");
+        showTurnBanner(`NOVO JUTSU: ${name}!`, 2200);
     }
 
     function playCardFromHand(cardId, handIndex) {

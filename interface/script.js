@@ -213,6 +213,33 @@ document.addEventListener("DOMContentLoaded", () => {
         "jutsu019": { name: "Chidori Senbon", type: "Jutsu", element: "Raio", cost: 25, description: "Causa 30 de dano Piercing.", image: "placeholder.png", attack: 30, effect: "piercing_attack", price: 130 },
         "jutsu020": { name: "Chidori Sharp Spear", type: "Jutsu", element: "Raio", cost: 35, description: "Causa 45 de dano Piercing. Ignora 5 de Defesa.", image: "placeholder.png", attack: 45, effect: "ignore_defense_value", effectValue: 5, price: 170 },
         "jutsu021": { name: "Chidori Nagashi", type: "Jutsu", element: "Raio", cost: 40, description: "Causa 20 de dano a todos inimigos. (Não implementado)", image: "placeholder.png", attack: 20, effect: "area_attack", price: 190 },
+        "jutsu030": { name: "Oodama Rasengan", type: "Jutsu", element: "Vento", cost: 50, description: "Causa 60 de dano de Vento massivo.", image: "placeholder.png", attack: 60, price: 240 },
+        "jutsu031": { name: "Clone das Sombras Múltiplo", type: "Jutsu", element: "Nenhum", cost: 25, description: "Compra 2 cartas.", image: "placeholder.png", effect: "draw_card", effectValue: 2, price: 140 },
+        "jutsu032": { name: "Liberação de Vento: Bola de Vácuo", type: "Jutsu", element: "Vento", cost: 30, description: "Causa 38 de dano de Vento.", image: "placeholder.png", attack: 38, price: 150 },
+        "jutsu033": { name: "Flor de Fênix", type: "Jutsu", element: "Fogo", cost: 30, description: "Causa 55 de dano de Fogo dividido em vários projéteis.", image: "placeholder.png", attack: 55, hits: 5, price: 190 },
+        "jutsu034": { name: "Grande Bola de Fogo", type: "Jutsu", element: "Fogo", cost: 45, description: "Causa 60 de dano de Fogo.", image: "placeholder.png", attack: 60, effect: "burn", effectValue: 15, duration: 2, price: 230 },
+        "jutsu035": { name: "Chamas do Dragão", type: "Jutsu", element: "Fogo", cost: 40, description: "Causa 50 de dano de Fogo e queima por 2 turnos.", image: "placeholder.png", attack: 50, effect: "burn", effectValue: 10, duration: 2, price: 200 },
+        "jutsu036": { name: "Dragão de Água Explosivo", type: "Jutsu", element: "Água", cost: 45, description: "Causa 55 de dano de Água em área.", image: "placeholder.png", attack: 55, effect: "area_attack", price: 220 },
+        "jutsu037": { name: "Ondas de Água", type: "Jutsu", element: "Água", cost: 30, description: "Causa 40 de dano de Água.", image: "placeholder.png", attack: 40, price: 150 },
+        "jutsu038": { name: "Prisão de Água", type: "Jutsu", element: "Água", cost: 35, description: "Prende o inimigo. Descarta 1 carta da mão inimiga.", image: "placeholder.png", effect: "opponent_discard", effectValue: 1, price: 150 },
+        "jutsu039": { name: "Espelhos de Gelo", type: "Jutsu", element: "Água", cost: 45, description: "Causa 60 de dano de Água em alta velocidade.", image: "placeholder.png", attack: 60, effect: "multi_hit", hits: 3, price: 230 },
+        "jutsu040": { name: "Corte de Lâmina de Vento", type: "Jutsu", element: "Vento", cost: 35, description: "Causa 45 de dano de Vento perfurante.", image: "placeholder.png", attack: 45, effect: "piercing_attack", price: 180 },
+        "jutsu041": { name: "Grande Queda de Vento", type: "Jutsu", element: "Vento", cost: 40, description: "Causa 55 de dano de Vento em área.", image: "placeholder.png", attack: 55, effect: "area_attack", price: 210 },
+        "jutsu042": { name: "Liberação de Terra: Grande Muralha", type: "Jutsu", element: "Terra", cost: 30, description: "Ganha 30% de Defesa por 2 turnos.", image: "placeholder.png", defensePercent: 0.30, duration: 2, price: 140 },
+        "jutsu043": { name: "Dragon de Terra", type: "Jutsu", element: "Terra", cost: 40, description: "Causa 52 de dano de Terra.", image: "placeholder.png", attack: 52, price: 200 },
+        "jutsu044": { name: "Fissura Terrestre", type: "Jutsu", element: "Terra", cost: 35, description: "Causa 48 de dano de Terra e ignora 5 de Defesa.", image: "placeholder.png", attack: 48, effect: "ignore_defense_value", effectValue: 5, price: 190 },
+        "jutsu045": { name: "Poeira Explosiva", type: "Jutsu", element: "Terra", cost: 55, description: "Causa 70 de dano de Terra que ignora defesa.", image: "placeholder.png", attack: 70, effect: "ignore_defense", price: 280 },
+        "jutsu046": { name: "Trovão Assassino", type: "Jutsu", element: "Raio", cost: 40, description: "Causa 55 de dano de Raio.", image: "placeholder.png", attack: 55, price: 210 },
+        "jutsu047": { name: "Armadura de Raio", type: "Jutsu", element: "Raio", cost: 30, description: "Ganha 40 de Defesa por 2 turnos.", image: "placeholder.png", defenseBuff: 40, duration: 2, price: 150 },
+        "jutsu048": { name: "Lariat de Raio", type: "Jutsu", element: "Raio", cost: 45, description: "Causa 65 de dano de Raio e atordoa 1 turno.", image: "placeholder.png", attack: 65, effect: "stun", duration: 1, price: 260 },
+        "jutsu049": { name: "Estilo Água: Tubarão Faminto", type: "Jutsu", element: "Água", cost: 35, description: "Causa 45 de dano de Água e drena 10 de Chakra.", image: "placeholder.png", attack: 45, effect: "chakra_drain", effectValue: 10, price: 200 },
+        "jutsu050": { name: "Bijuu Dama", type: "Jutsu", element: "Nenhum", cost: 70, description: "Causa 90 de dano massivo que ignora defesa.", image: "placeholder.png", attack: 90, effect: "ignore_defense", price: 320 },
+        "jutsu051": { name: "Genjutsu: Flores Demôniacas", type: "Jutsu", element: "Nenhum", cost: 30, description: "Confunde o inimigo: 50% de chance de errar.", image: "placeholder.png", effect: "enemy_attack_fail_chance", effectValue: 0.5, duration: 1, price: 130 },
+        "jutsu052": { name: "Amaterasu Negra", type: "Jutsu", element: "Fogo", cost: 55, description: "Causa 35 de dano de Fogo por 3 turnos.", image: "placeholder.png", effect: "burn", effectValue: 35, duration: 3, price: 280 },
+        "jutsu053": { name: "Shinra Tensei", type: "Jutsu", element: "Nenhum", cost: 50, description: "Bloqueia todo o dano no próximo turno.", image: "placeholder.png", effect: "block_all_damage", duration: 1, price: 250 },
+        "jutsu054": { name: "Lâminas de Papel", type: "Jutsu", element: "Vento", cost: 25, description: "Causa 35 de dano de Vento perfurante.", image: "placeholder.png", attack: 35, effect: "piercing_attack", price: 150 },
+        "jutsu055": { name: "Punho Suave: Palmas Gêmeas", type: "Jutsu", element: "Nenhum", cost: 25, description: "Causa 30 de dano e reduz a defesa inimiga em 15.", image: "placeholder.png", attack: 30, effect: "reduce_defense", effectValue: 15, price: 150 },
+        "jutsu056": { name: "Rasengan Gigante", type: "Jutsu", element: "Vento", cost: 55, description: "Causa 75 de dano de Vento.", image: "placeholder.png", attack: 75, price: 300 },
         "material001": { name: "Erva Medicinal", type: "Material", description: "Usada para criar itens de cura.", price: 5 },
         "material002": { name: "Fragmento de Metal", type: "Material", description: "Usado para criar armas e armaduras.", price: 10 },
         "material003": { name: "Pó de Chakra", type: "Material", description: "Usado para encantar equipamentos ou criar jutsus.", price: 15 }
@@ -650,7 +677,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const availableItems = [];
         for (const cardId in cardDatabase) {
             const cardData = cardDatabase[cardId];
-            if (cardData.price && cardData.price > 0 && cardData.type !== "Material") { // Materiais não são vendidos por padrão
+            if (cardData.price && cardData.price > 0 && cardData.type !== "Material" && cardData.type !== "Jutsu") { // Jutsus não são vendidos; ganhos em batalha
                 availableItems.push({ id: cardId, data: cardData });
             }
         }
@@ -1165,11 +1192,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function ccUpdateSummary() {
         if (ccEls.pointsLeft) ccEls.pointsLeft.textContent = CC.creationState.points;
-        if (ccEls.coinsLeft) ccEls.coinsLeft.textContent = CC.creationState.coins;
-        const onAttrStep = CC.creationState.step === "attributes";
-        const onShopStep = CC.creationState.step === "shop";
-        if (ccEls.summary) ccEls.summary.classList.toggle("attr-mode", onAttrStep);
-        if (ccEls.summary) ccEls.summary.classList.toggle("shop-mode", onShopStep);
+        const step = CC.creationState.step;
+        if (ccEls.summary) {
+            ccEls.summary.classList.toggle("attr-mode", step === "attributes");
+            ccEls.summary.classList.toggle("shop-mode", step === "shop");
+        }
+        const pointsRow = document.getElementById("cc-points-row");
+        const picksRow = document.getElementById("cc-picks-row");
+        if (pointsRow) pointsRow.hidden = step !== "attributes";
+        if (picksRow) picksRow.hidden = step !== "shop";
+        if (ccEls.coinsLeft) ccEls.coinsLeft.textContent = `${CC.creationState.jutsuPicks.length} / 5`;
     }
 
     function ccRender() {
@@ -1196,7 +1228,7 @@ document.addEventListener("DOMContentLoaded", () => {
             case "clan": return !!s.clanId;
             case "character": return !!s.charId;
             case "attributes": return s.points === 0;
-            case "shop": return true;
+            case "shop": return s.jutsuPicks.length === CC_JUTSU_PICKS;
             case "review": return true;
             default: return false;
         }
@@ -1326,44 +1358,64 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    const CC_JUTSU_PICKS = 5;
+
+    function ccJutsuPool() {
+        // Jutsus do clã, exceto o jutsu principal do personagem.
+        const clan = CC.getClan(CC.creationState.clanId);
+        const char = CC.getCharacter(CC.creationState.clanId, CC.creationState.charId);
+        if (!clan || !char) return [];
+        const sig = char.jutsu.cardId;
+        const seen = {};
+        return clan.cardPool.filter((id) => {
+            const data = cardDatabase[id];
+            if (!data || data.type !== "Jutsu") return false;
+            if (id === sig) return false;
+            if (seen[id]) return false;
+            seen[id] = true;
+            return true;
+        });
+    }
+
     function ccRenderShop() {
         ccShowView("shopView");
-        const clan = CC.getClan(CC.creationState.clanId);
-        ccEls.title.textContent = "Compre suas Cartas Iniciais";
-        ccEls.subtitle.textContent = "Você tem 1.500 moedas. As cartas disponíveis são do seu clã.";
+        ccEls.title.textContent = "Escolha 5 Jutsus";
+        ccEls.subtitle.textContent = "Além do seu jutsu principal, escolha 5 jutsus diferentes do seu clã. Mais jutsus são ganhos vencendo batalhas.";
         ccEls.shopView.innerHTML = "";
 
+        const selected = CC.creationState.jutsuPicks;
         const bar = document.createElement("div");
         bar.className = "cc-shop-bar";
         bar.innerHTML = `
-            <span>Carrinho: <strong id="cc-cart-count">${CC.creationState.cart.length}</strong> cartas</span>
-            <span>Custo: <strong id="cc-cart-cost">${ccCartCost()}</strong> moedas</span>
-            <button id="cc-clear-cart" class="game-button btn-small">Limpar</button>
+            <span>Escolhidos: <strong id="cc-pick-count">${selected.length}</strong> / ${CC_JUTSU_PICKS}</span>
         `;
         ccEls.shopView.appendChild(bar);
 
         const grid = document.createElement("div");
         grid.className = "cc-grid cc-shop-grid";
-        clan.cardPool.forEach((cardId) => {
-            const data = cardDatabase[cardId];
-            if (!data) return;
-            const price = data.price || 0;
-            const owned = CC.creationState.purchased[cardId] || 0;
-            const inCart = CC.creationState.cart.filter((id) => id === cardId).length;
+        ccJutsuPool().forEach((cardId) => {
+            const isPicked = selected.indexOf(cardId) !== -1;
             const card = createCardInstance(cardId);
             const el = card.getHTMLElement();
             el.classList.add("cc-shop-item");
+            if (isPicked) el.classList.add("cc-picked");
             const footer = document.createElement("div");
             footer.className = "cc-shop-footer";
             footer.innerHTML = `
-                <span class="cc-price">${price} 🪙</span>
-                <button class="cc-buy-btn game-button btn-small" ${price > CC.creationState.coins ? "disabled" : ""}>Comprar (${inCart})</button>
+                <button class="cc-buy-btn game-button btn-small" ${!isPicked && selected.length >= CC_JUTSU_PICKS ? "disabled" : ""}>
+                    ${isPicked ? "✔ Escolhido" : "Escolher"}
+                </button>
             `;
             footer.querySelector(".cc-buy-btn").addEventListener("click", () => {
-                if (price > CC.creationState.coins) { sfx("error"); return; }
-                CC.creationState.coins -= price;
-                CC.creationState.cart.push(cardId);
-                sfx("draw");
+                const idx = selected.indexOf(cardId);
+                if (idx !== -1) {
+                    selected.splice(idx, 1);
+                    sfx("card");
+                } else {
+                    if (selected.length >= CC_JUTSU_PICKS) { sfx("error"); return; }
+                    selected.push(cardId);
+                    sfx("draw");
+                }
                 ccRender();
             });
             const wrapper = document.createElement("div");
@@ -1373,20 +1425,6 @@ document.addEventListener("DOMContentLoaded", () => {
             grid.appendChild(wrapper);
         });
         ccEls.shopView.appendChild(grid);
-
-        const clearBtn = document.getElementById("cc-clear-cart");
-        if (clearBtn) {
-            clearBtn.addEventListener("click", () => {
-                CC.creationState.coins += ccCartCost();
-                CC.creationState.cart = [];
-                sfx("turn");
-                ccRender();
-            });
-        }
-    }
-
-    function ccCartCost() {
-        return CC.creationState.cart.reduce((sum, id) => sum + ((cardDatabase[id] && cardDatabase[id].price) || 0), 0);
     }
 
     function ccRenderReview() {
@@ -1423,14 +1461,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     <span>Precisão: <strong>${Math.round(derived.accuracy * 100)}%</strong></span>
                 </div>
                 <div class="cc-review-deck">
-                    <h4>Cartas compradas (${CC.creationState.cart.length})</h4>
+                    <h4>Jutsus escolhidos (${CC.creationState.jutsuPicks.length})</h4>
                     <div class="cc-review-cards">
-                        ${CC.creationState.cart.length
-                            ? CC.creationState.cart.map((id) => `<span class="cc-chip">${cardDatabase[id].name}</span>`).join("")
-                            : '<span class="cc-empty">Nenhuma carta comprada (você jogará só com as cartas iniciais do personagem).</span>'}
+                        ${CC.creationState.jutsuPicks
+                            .map((id) => `<span class="cc-chip">${cardDatabase[id].name}</span>`).join("")}
                     </div>
                 </div>
-                <div class="cc-review-coins">Moedas restantes: <strong>${CC.creationState.coins}</strong></div>
             </div>
         `;
     }
@@ -1472,20 +1508,20 @@ document.addEventListener("DOMContentLoaded", () => {
             jutsu: char.jutsu,
             attributes: Object.assign({}, s.attributes),
             derived: derived,
-            coinsLeft: s.coins
+            jutsuPicks: s.jutsuPicks.slice()
         };
         CC.setCreated(character);
 
         // Aplica ao perfil do jogador.
-        playerProfile.currency = s.coins;
+        playerProfile.currency = 0;
         playerProfile.level = 1;
         playerProfile.xp = 0;
         playerProfile.xpToNextLevel = 100;
 
-        // Concede as cartas iniciais do personagem + compradas.
+        // Concede as cartas iniciais do personagem + jutsus escolhidos + jutsu principal.
         const grants = {};
         char.startCards.forEach((id) => { grants[id] = (grants[id] || 0) + 1; });
-        s.cart.forEach((id) => { grants[id] = (grants[id] || 0) + 1; });
+        s.jutsuPicks.forEach((id) => { grants[id] = (grants[id] || 0) + 1; });
         if (grants[char.jutsu.cardId]) grants[char.jutsu.cardId] += 1;
         else grants[char.jutsu.cardId] = 1;
 
@@ -1535,9 +1571,18 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         const goCombat = document.getElementById("cc-goto-combat");
         if (goCombat) goCombat.addEventListener("click", () => {
-            const btn = document.getElementById("nav-combat");
-            if (btn) btn.click();
+            window.location.href = ccCombatUrl();
         });
+        // Atualiza o link de combate da barra de navegação com o clã/personagem.
+        const navLink = document.getElementById("nav-battle-v3");
+        if (navLink) navLink.href = ccCombatUrl();
+    }
+
+    function ccCombatUrl() {
+        const c = CC.getCreated();
+        const base = "../combate/combate2.html";
+        if (!c) return base;
+        return `${base}?clan=${encodeURIComponent(c.clanId)}&char=${encodeURIComponent(c.name)}`;
     }
 
     function openCharacterCreation() {
@@ -2094,11 +2139,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- Inicialização ---
     if (endTurnButton) endTurnButton.addEventListener("click", endTurn);
     if (finalizePurchaseButton) finalizePurchaseButton.addEventListener("click", finalizePurchase);
-    
-    // Exibe a seção de combate por padrão e inicia o jogo
-    const combatNavButton = document.getElementById("nav-combat");
-    if (combatNavButton) combatNavButton.click(); // Simula clique para mostrar a seção correta
-    startGame();
+
+    // O jogo inicia na criação de personagem.
+    openCharacterCreation();
 
 }); // Fim do DOMContentLoaded
 
