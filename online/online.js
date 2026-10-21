@@ -93,6 +93,16 @@ socket.on("queue:waiting", () => {
     document.getElementById("queue-overlay").classList.remove("hidden");
 });
 
+socket.on("queue:info", (info) => {
+    const el = document.getElementById("queue-text");
+    if (!el) return;
+    if (info && info.count > 0) {
+        el.textContent = `Na fila: ${info.count} jogador(es). Aguardando oponente...`;
+    } else {
+        el.textContent = "Aguardando outro jogador entrar na fila.";
+    }
+});
+
 socket.on("match:found", (data) => {
     matchId = data.matchId;
     role = data.role;
