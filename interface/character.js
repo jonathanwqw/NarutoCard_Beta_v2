@@ -378,8 +378,31 @@
         jutsuPicks: [] // jutsus escolhidos (até 5, diferentes, exceto o principal)
     };
 
-    // Personagem criado e confirmado (em memória).
+    // Personagem criado e confirmado.
+    const STORAGE_KEY = "narutoCard_character_v1";
     let createdCharacter = null;
+
+    function saveCreated(character) {
+        try {
+            if (!character) { localStorage.removeItem(STORAGE_KEY); return; }
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(character));
+        } catch (e) { /* localStorage indisponível */ }
+    }
+
+    function loadCreated() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            if (!parsed || !parsed.clanId || !parsed.attributes) return null;
+            return parsed;
+        } catch (e) { return null; }
+    }
+
+    function clearCreated() {
+        createdCharacter = null;
+        saveCreated(null);
+    }
 
     const CharacterCreator = {
         ATTR_POINTS_CREATION,
@@ -390,8 +413,12 @@
         creationState,
         deriveStats,
         totalBaseAttributes,
-        getCreated: () => createdCharacter,
-        setCreated: (c) => { createdCharacter = c; },
+        STORAGE_KEY,
+        saveCreated,
+        loadCreated,
+        clearCreated,
+        getCreated: () => createdCharacter || (createdCharacter = loadCreated()),
+        setCreated: (c) => { createdCharacter = c; saveCreated(c); },
         getClan: (clanId) => clans[clanId] || null,
         getCharacter: (clanId, charId) => (clans[clanId] && clans[clanId].characters[charId]) || null,
         reset: () => {

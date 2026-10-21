@@ -107,6 +107,26 @@ body {
 
 .nav-spacer { flex: 1; }
 
+/* Abas bloqueadas até criar o personagem */
+.nav-button.nav-locked {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(0.8);
+}
+
+.nav-button.nav-locked:hover {
+  transform: none;
+  box-shadow: none;
+  background-color: var(--bg-panel);
+}
+
+.nav-button.nav-locked.nav-link,
+.nav-button.nav-locked.nav-link:hover {
+  background: var(--bg-panel);
+  border-color: var(--line-dark);
+  color: var(--muted);
+}
+
 .nav-button.sound-btn {
   font-size: 16px;
   padding: 6px 12px;

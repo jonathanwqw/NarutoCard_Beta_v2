@@ -1510,7 +1510,6 @@ document.addEventListener("DOMContentLoaded", () => {
             derived: derived,
             jutsuPicks: s.jutsuPicks.slice()
         };
-        CC.setCreated(character);
 
         // Aplica ao perfil do jogador.
         playerProfile.currency = 0;
@@ -1529,6 +1528,10 @@ document.addEventListener("DOMContentLoaded", () => {
         for (const id in grants) {
             playerProfile.cardCollection[id] = { quantity: grants[id], level: 1, xp: 0 };
         }
+
+        // Persiste a coleção inicial junto do personagem (para reabrir o jogo).
+        character.cardCollection = JSON.parse(JSON.stringify(playerProfile.cardCollection));
+        CC.saveCreated(character);
 
         initializePlayerDeck();
         applyEquipmentEffects();
@@ -1576,6 +1579,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Atualiza o link de combate da barra de navegação com o clã/personagem.
         const navLink = document.getElementById("nav-battle-v3");
         if (navLink) navLink.href = ccCombatUrl();
+        if (typeof updateTabsLock === "function") updateTabsLock();
     }
 
     function ccCombatUrl() {
@@ -1596,8 +1600,47 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    // Restaura coleção/perfil a partir do personagem salvo (localStorage).
+    function restoreFromSave() {
+        const created = CC.getCreated();
+        if (!created) return false;
+        if (created.cardCollection) {
+            playerProfile.cardCollection = JSON.parse(JSON.stringify(created.cardCollection));
+        }
+        playerProfile.currency = created.currency || 0;
+        initializePlayerDeck();
+        applyEquipmentEffects();
+        updatePlayerProfileUI();
+        return true;
+    }
+
+    // Bloqueia/desbloqueia as abas conforme o personagem exista ou não.
+    function updateTabsLock() {
+        const hasChar = !!CC.getCreated();
+        document.querySelectorAll("#top-nav .nav-button").forEach((btn) => {
+            if (btn.id === "sound-toggle") return;
+            const isCharacter = btn.id === "nav-character";
+            const blocked = !hasChar && !isCharacter;
+            btn.classList.toggle("nav-locked", blocked);
+        });
+        const navLink = document.getElementById("nav-battle-v3");
+        if (navLink) navLink.classList.toggle("nav-locked", !hasChar);
+    }
+
     if (ccEls.backBtn) ccEls.backBtn.addEventListener("click", ccBack);
     if (ccEls.nextBtn) ccEls.nextBtn.addEventListener("click", ccAdvance);
+
+    // Bloqueia o link de combate até o personagem existir.
+    const battleNavLink = document.getElementById("nav-battle-v3");
+    if (battleNavLink) {
+        battleNavLink.addEventListener("click", (e) => {
+            if (!CC.getCreated()) {
+                e.preventDefault();
+                sfx("error");
+                logMessage("Crie seu personagem antes de ir para o combate.");
+            }
+        });
+    }
 
     // --- Lógica de Navegação entre Abas ---
     const navButtons = document.querySelectorAll(".nav-button[id^='nav-']:not(.nav-link):not(.sound-btn)");
@@ -1605,6 +1648,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     navButtons.forEach(button => {
         button.addEventListener("click", () => {
+            // Bloqueia abas até o personagem ser criado (exceto a aba Personagem).
+            if (!CC.getCreated() && button.id !== "nav-character") {
+                sfx("error");
+                logMessage("Crie seu personagem antes de acessar esta aba.");
+                return;
+            }
             navButtons.forEach(btn => btn.classList.remove("active"));
             gameSections.forEach(section => section.classList.remove("active-section"));
 
@@ -2140,8 +2189,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (endTurnButton) endTurnButton.addEventListener("click", endTurn);
     if (finalizePurchaseButton) finalizePurchaseButton.addEventListener("click", finalizePurchase);
 
-    // O jogo inicia na criação de personagem.
+    // O jogo inicia na criação de personagem (ou no resultado, se já existir).
+    restoreFromSave();
     openCharacterCreation();
+    updateTabsLock();
 
 }); // Fim do DOMContentLoaded
 

@@ -16,6 +16,18 @@ document.addEventListener("DOMContentLoaded", () => {
     let playerClanPool = [];
     let playerClanName = null;
     let wonJutsus = [];
+    let savedCharacter = null;
+
+    // Lê o personagem criado salvo pela interface (localStorage).
+    function loadSavedCharacter() {
+        try {
+            const raw = localStorage.getItem("narutoCard_character_v1");
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            if (!parsed || !parsed.attributes) return null;
+            return parsed;
+        } catch (e) { return null; }
+    }
 
     // Pools de jutsus por clã — usados para conceder um jutsu ao vencer.
     const clansForCombat = {
@@ -866,17 +878,23 @@ document.addEventListener("DOMContentLoaded", () => {
     function startBattle() {
         logMessage("Nova batalha iniciada!", "log-system");
 
-        // Lê o clã/personagem passado pela interface via URL (memória da página não persiste).
-        try {
-            const params = new URLSearchParams(window.location.search);
-            const clanParam = params.get("clan");
-            if (clanParam && !playerClanName) {
-                playerClanName = clansForCombat[clanParam] ? clansForCombat[clanParam].name : clanParam;
-                playerClanPool = clansForCombat[clanParam] ? clansForCombat[clanParam].pool.slice() : [];
-            }
-            const charParam = params.get("char");
-            if (charParam) battleState.player.characterName = charParam;
-        } catch (e) { /* URLSearchParams indisponível */ }
+        // Lê o clã/personagem: primeiro o personagem salvo, com fallback na URL.
+        savedCharacter = loadSavedCharacter();
+        if (savedCharacter && savedCharacter.clanId) {
+            const c = clansForCombat[savedCharacter.clanId];
+            playerClanName = savedCharacter.clanName || (c ? c.name : savedCharacter.clanId);
+            playerClanPool = c ? c.pool.slice() : [];
+        } else {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const clanParam = params.get("clan");
+                if (clanParam) {
+                    const c = clansForCombat[clanParam];
+                    playerClanName = c ? c.name : clanParam;
+                    playerClanPool = c ? c.pool.slice() : [];
+                }
+            } catch (e) { /* URLSearchParams indisponível */ }
+        }
 
         currentRivalName = rivalNames[Math.floor(Math.random() * rivalNames.length)];
         logMessage(`Seu oponente é: ${currentRivalName}`, "log-system");
@@ -895,28 +913,6 @@ document.addEventListener("DOMContentLoaded", () => {
         battleState.opponent.element = rivalElements[currentRivalName] || "Nenhum";
         battleState.player.element = "Nenhum";
 
-        // Aplica o personagem criado (se houver): atributos, vida/chakra, desvio e elemento do jutsu principal.
-        battleState.player.dodgeChance = 0.10;
-        battleState.player.accuracy = 0.85;
-        battleState.player.characterName = null;
-        battleState.player.jutsuPower = 0;
-        const created = window.NarutoCharacter && window.NarutoCharacter.getCreated && window.NarutoCharacter.getCreated();
-        if (created && created.derived) {
-            const d = created.derived;
-            battleState.player.maxHealth = d.maxHealth;
-            battleState.player.maxChakra = d.maxChakra;
-            battleState.player.maxDefense = d.maxDefense;
-            battleState.player.attackBoost = d.attackBonus;
-            battleState.player.critChanceBoost = Math.max(0, d.critChance - 0.05);
-            battleState.player.dodgeChance = d.dodgeChance;
-            battleState.player.accuracy = d.accuracy;
-            battleState.player.characterName = created.name;
-            battleState.player.element = created.element || "Nenhum";
-            battleState.player.jutsuPower = (created.jutsu && created.jutsu.power) || 0;
-            const pAvatar = document.querySelector("#player-status-side .player-avatar");
-            if (pAvatar) pAvatar.textContent = created.name.split(" ")[0].substring(0, 3).toUpperCase();
-            logMessage(`Personagem: ${created.name} — Jutsu principal: ${created.signature.name}.`, "log-system");
-        }
         battleResultsScreen.classList.remove("visible");
         battleResultsScreen.classList.add("battle-results-screen-hidden");
 
@@ -931,8 +927,6 @@ document.addEventListener("DOMContentLoaded", () => {
             t.health = t.maxHealth;
             t.chakra = t.maxChakra;
             t.defense = 0;
-            t.attackBoost = 0;
-            t.critChanceBoost = 0;
             t.statusEffects = [];
             t.hand = [];
             t.discardPile = [];
@@ -943,6 +937,32 @@ document.addEventListener("DOMContentLoaded", () => {
             initializeDeck(type);
             drawCard(type, 4);
         });
+
+        // Aplica o personagem criado por último (atributos, vida/chakra, desvio e jutsu principal).
+        battleState.player.attackBoost = 0;
+        battleState.player.critChanceBoost = 0;
+        battleState.player.dodgeChance = 0.10;
+        battleState.player.accuracy = 0.85;
+        battleState.player.characterName = null;
+        battleState.player.jutsuPower = 0;
+        if (savedCharacter && savedCharacter.derived) {
+            const d = savedCharacter.derived;
+            battleState.player.maxHealth = d.maxHealth;
+            battleState.player.maxChakra = d.maxChakra;
+            battleState.player.maxDefense = d.maxDefense;
+            battleState.player.health = d.maxHealth;
+            battleState.player.chakra = d.maxChakra;
+            battleState.player.attackBoost = d.attackBonus;
+            battleState.player.critChanceBoost = Math.max(0, d.critChance - 0.05);
+            battleState.player.dodgeChance = d.dodgeChance;
+            battleState.player.accuracy = d.accuracy;
+            battleState.player.characterName = savedCharacter.name;
+            battleState.player.element = savedCharacter.element || "Nenhum";
+            battleState.player.jutsuPower = (savedCharacter.jutsu && savedCharacter.jutsu.power) || 0;
+            const pAvatar = document.querySelector("#player-status-side .player-avatar");
+            if (pAvatar) pAvatar.textContent = savedCharacter.name.split(" ")[0].substring(0, 3).toUpperCase();
+            logMessage(`Personagem: ${savedCharacter.name} — Jutsu principal: ${savedCharacter.signature.name}.`, "log-system");
+        }
 
         if (fusionButton) fusionButton.classList.remove("active");
         if (fusionHint) fusionHint.classList.remove("visible");
