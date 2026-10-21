@@ -1561,7 +1561,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <span>Desvio ${Math.round(character.derived.dodgeChance * 100)}%</span>
                 </div>
                 <button id="cc-recreate" class="game-button">Criar outro personagem</button>
-                <button id="cc-goto-combat" class="game-button">Ir para Combate</button>
+                <button id="cc-goto-combat" class="game-button">Entrar em Batalha</button>
             </div>
         `;
         const recreate = document.getElementById("cc-recreate");
@@ -1574,11 +1574,11 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         const goCombat = document.getElementById("cc-goto-combat");
         if (goCombat) goCombat.addEventListener("click", () => {
-            window.location.href = ccCombatUrl();
+            window.location.href = "../online/online.html";
         });
         // Atualiza o link de combate da barra de navegação com o clã/personagem.
         const navLink = document.getElementById("nav-battle-v3");
-        if (navLink) navLink.href = ccCombatUrl();
+        if (navLink) navLink.href = "../online/online.html";
         if (typeof updateTabsLock === "function") updateTabsLock();
     }
 
