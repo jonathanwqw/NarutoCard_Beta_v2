@@ -19,6 +19,14 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
 const ROOT = path.join(__dirname, "..");
+app.use((req, res, next) => {
+    if (req.path.endsWith(".html") || req.path.endsWith(".js")) {
+        res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+        res.setHeader("Pragma", "no-cache");
+        res.setHeader("Expires", "0");
+    }
+    next();
+});
 app.use(express.static(ROOT));
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
@@ -109,6 +117,27 @@ function elementMultiplier(attackerEl, defenderEl) {
 // ---------------------------------------------------------------------------
 let queue = []; // { socket, character }
 const matches = new Map(); // matchId -> match
+const inMatch = new Set(); // socket.id que já estão em partida
+
+function pruneQueue() {
+    queue = queue.filter((q) => {
+        if (!q || !q.socket) return false;
+        if (!q.socket.connected) return false;
+        if (inMatch.has(q.socket.id)) return false;
+        return true;
+    });
+}
+
+function emitQueueInfo() {
+    pruneQueue();
+    const count = queue.length;
+    io.emit("queue:info", { count, waiting: count >= 1 });
+}
+
+setInterval(() => {
+    pruneQueue();
+    emitQueueInfo();
+}, 2000);
 
 function makeDeckFromCharacter(character) {
     const deck = [];
@@ -205,28 +234,50 @@ function emitState(match) {
 }
 
 function startMatch(a, b) {
-    const id = "m_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
-    const fa = createFighter(a.character);
-    const fb = createFighter(b.character);
-    drawCards(fa, 5);
-    drawCards(fb, 5);
-    const match = {
-        id,
-        a: { socket: a.socket, fighter: fa },
-        b: { socket: b.socket, fighter: fb },
-        turn: 1,
-        currentPlayer: "a",
-        log: [],
-        over: false
-    };
-    matches.set(id, match);
-    a.socket.join(id);
-    b.socket.join(id);
+    try {
+        if (!a || !b || !a.socket || !b.socket) return false;
+        if (!a.socket.connected || !b.socket.connected) return false;
+        if (inMatch.has(a.socket.id) || inMatch.has(b.socket.id)) return false;
+        if (a.socket.id === b.socket.id) return false;
 
-    a.socket.emit("match:found", { matchId: id, role: "a", opponent: fa.character.name === fb.character.name ? fb.character : fb.character });
-    b.socket.emit("match:found", { matchId: id, role: "b", opponent: fa.character });
-    // envia os nomes corretos
-    emitState(match);
+        queue = queue.filter((q) => q.socket.id !== a.socket.id && q.socket.id !== b.socket.id);
+
+        const id = "m_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+        const fa = createFighter(a.character);
+        const fb = createFighter(b.character);
+        drawCards(fa, 5);
+        drawCards(fb, 5);
+        const match = {
+            id,
+            a: { socket: a.socket, fighter: fa },
+            b: { socket: b.socket, fighter: fb },
+            turn: 1,
+            currentPlayer: "a",
+            log: [],
+            over: false
+        };
+        matches.set(id, match);
+        inMatch.add(a.socket.id);
+        inMatch.add(b.socket.id);
+        a.socket.join(id);
+        b.socket.join(id);
+
+        a.socket.emit("match:found", { matchId: id, role: "a", opponent: fb.character });
+        b.socket.emit("match:found", { matchId: id, role: "b", opponent: fa.character });
+        emitState(match);
+        emitQueueInfo();
+        return true;
+    } catch (e) {
+        // devolve pra fila em caso de erro
+        if (a && a.socket && a.socket.connected && !inMatch.has(a.socket.id)) {
+            queue.push(a);
+        }
+        if (b && b.socket && b.socket.connected && !inMatch.has(b.socket.id)) {
+            queue.push(b);
+        }
+        emitQueueInfo();
+        return false;
+    }
 }
 
 function fighterOf(match, socketId) {
@@ -447,16 +498,19 @@ io.on("connection", (socket) => {
     socket.data.character = null;
 
     socket.on("queue:join", (character) => {
+        if (inMatch.has(socket.id)) return;
         socket.data.character = character || null;
-        // remove de fila anterior
+        pruneQueue();
         queue = queue.filter((q) => q.socket.id !== socket.id);
-        queue.push({ socket, character });
+        queue.push({ socket, character: socket.data.character });
         socket.emit("queue:waiting");
+        emitQueueInfo();
         tryMatch();
     });
 
     socket.on("queue:leave", () => {
         queue = queue.filter((q) => q.socket.id !== socket.id);
+        emitQueueInfo();
     });
 
     socket.on("match:play", (payload) => {
@@ -473,25 +527,37 @@ io.on("connection", (socket) => {
 
     socket.on("disconnect", () => {
         queue = queue.filter((q) => q.socket.id !== socket.id);
+        inMatch.delete(socket.id);
         for (const [id, match] of matches) {
             if (match.a.socket.id === socket.id || match.b.socket.id === socket.id) {
                 match.over = true;
                 const other = match.a.socket.id === socket.id ? match.b : match.a;
-                other.socket.emit("match:opponentLeft");
+                if (other && other.socket && other.socket.connected) {
+                    other.socket.emit("match:opponentLeft");
+                }
                 matches.delete(id);
             }
         }
+        emitQueueInfo();
     });
 });
 
 function tryMatch() {
+    pruneQueue();
     while (queue.length >= 2) {
         const a = queue.shift();
         const b = queue.shift();
-        if (!a.socket.connected) { if (b.socket.connected) queue.unshift(b); continue; }
-        if (!b.socket.connected) { if (a.socket.connected) queue.unshift(a); continue; }
-        startMatch(a, b);
+        if (!a || !b) continue;
+        if (!a.socket.connected || inMatch.has(a.socket.id)) { if (b.socket.connected) queue.push(b); continue; }
+        if (!b.socket.connected || inMatch.has(b.socket.id)) { if (a.socket.connected) queue.push(a); continue; }
+        if (a.socket.id === b.socket.id) { queue.push(a); continue; }
+        const ok = startMatch(a, b);
+        if (!ok) {
+            // re-tenta na próxima iteração
+        }
+        pruneQueue();
     }
+    emitQueueInfo();
 }
 
 const PORT = process.env.PORT || 3000;
