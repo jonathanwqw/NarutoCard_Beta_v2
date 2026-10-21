@@ -1590,14 +1590,48 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function openCharacterCreation() {
+        // Sempre começa a criação; se já houver personagem salvo, oferece continuar ou refazer.
+        if (ccEls.result) { ccEls.result.hidden = true; ccEls.result.innerHTML = ""; }
+        if (ccEls.creator) ccEls.creator.hidden = false;
         const created = CC.getCreated();
         if (created) {
-            showCharacterResult(created);
+            ccRenderSavedPrompt(created);
         } else {
-            if (ccEls.creator) ccEls.creator.hidden = false;
             CC.reset();
             ccRender();
         }
+    }
+
+    // Tela inicial com personagem salvo: continuar ou criar novo.
+    function ccRenderSavedPrompt(created) {
+        if (ccEls.creator) ccEls.creator.hidden = true;
+        if (!ccEls.result) return;
+        ccEls.result.hidden = false;
+        ccEls.result.innerHTML = `
+            <div class="cc-result-card" style="--char-color:${created.color || "var(--accent)"}">
+                <div class="cc-saved-label">Personagem salvo</div>
+                <h2>${created.name}</h2>
+                <div class="cc-char-title">${created.title} · ${created.clanName}</div>
+                <div class="cc-result-derived">
+                    <span>Vida ${created.derived.maxHealth}</span>
+                    <span>Chakra ${created.derived.maxChakra}</span>
+                    <span>Desvio ${Math.round(created.derived.dodgeChance * 100)}%</span>
+                </div>
+                <button id="cc-continue" class="game-button">Continuar com este personagem</button>
+                <button id="cc-new" class="game-button btn-small">Criar novo personagem</button>
+            </div>
+        `;
+        const cont = document.getElementById("cc-continue");
+        if (cont) cont.addEventListener("click", () => { showCharacterResult(created); });
+        const novo = document.getElementById("cc-new");
+        if (novo) novo.addEventListener("click", () => {
+            CC.clearCreated();
+            if (ccEls.result) { ccEls.result.hidden = true; ccEls.result.innerHTML = ""; }
+            if (ccEls.creator) ccEls.creator.hidden = false;
+            CC.reset();
+            ccRender();
+            updateTabsLock();
+        });
     }
 
     // Restaura coleção/perfil a partir do personagem salvo (localStorage).

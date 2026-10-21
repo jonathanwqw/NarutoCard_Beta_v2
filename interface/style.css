@@ -1414,6 +1414,14 @@ h1 {
 
 .cc-result-card h2 { margin: 0 0 2px; color: var(--char-color, var(--accent)); }
 
+.cc-saved-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
 .cc-result-stats, .cc-result-derived {
   display: flex;
   flex-wrap: wrap;
