@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 280" width="200" height="280" role="img" aria-label="Liberação de Vento: Bola de Vácuo">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1abc9c"/>
+      <stop offset="100%" stop-color="#127a68"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="42%" r="60%">
+      <stop offset="0%" stop-color="#a8f0e4" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#a8f0e4" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M20 0 H0 V20" fill="none" stroke="#ffffff" stroke-width="0.6" opacity="0.07"/>
+    </pattern>
+  </defs>
+  <rect width="200" height="280" fill="url(#bg)"/>
+  <rect width="200" height="280" fill="url(#grid)"/>
+  <g transform="rotate(1 100 140)">
+        <rect x="113" y="105" width="7" height="67" fill="#a8f0e4" opacity="0.12" rx="2"/>
+        <rect x="148" y="172" width="8" height="98" fill="#a8f0e4" opacity="0.12" rx="2"/>
+        <rect x="183" y="239" width="9" height="39" fill="#a8f0e4" opacity="0.12" rx="2"/>
+        <rect x="34" y="66" width="10" height="70" fill="#a8f0e4" opacity="0.12" rx="2"/>
+        <rect x="69" y="133" width="11" height="101" fill="#a8f0e4" opacity="0.12" rx="2"/>
+        <rect x="104" y="200" width="12" height="42" fill="#a8f0e4" opacity="0.12" rx="2"/>
+        <rect x="139" y="27" width="13" height="73" fill="#a8f0e4" opacity="0.12" rx="2"/>
+        <rect x="174" y="94" width="4" height="104" fill="#a8f0e4" opacity="0.12" rx="2"/>
+  </g>
+  <rect width="200" height="280" fill="url(#glow)"/>
+  <text x="100" y="158.36" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="54" font-weight="700" fill="#ffffff" opacity="0.85">LD</text>
+  <rect x="3" y="3" width="194" height="274" fill="none" stroke="#a8f0e4" stroke-width="3" opacity="0.45" rx="8"/>
+  <text x="188" y="266" text-anchor="end" font-family="monospace" font-size="14" fill="#ffffff" opacity="0.55">jutsu032</text>
+</svg>

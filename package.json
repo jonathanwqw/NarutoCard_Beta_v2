@@ -1,17 +1,18 @@
 {
-  "name": "naruto-card-online",
-  "version": "1.0.0",
-  "description": "Naruto Pixel Card Game - com modo online 1v1 (Socket.IO)",
-  "main": "server/server.js",
-  "type": "commonjs",
+  "name": "naruto-card",
+  "version": "2.0.0",
+  "description": "Naruto Pixel Card Game - versão estática e local (sem modo online)",
+  "type": "module",
+  "private": true,
   "scripts": {
-    "start": "node server/server.js"
+    "dev": "node tools/serve.js",
+    "start": "node tools/serve.js",
+    "build": "node tools/build.js",
+    "art": "node tools/generate-art.js",
+    "validate": "node tools/validate.js",
+    "test": "node --test tests/"
   },
   "engines": {
     "node": ">=18"
-  },
-  "dependencies": {
-    "express": "^4.19.2",
-    "socket.io": "^4.7.5"
   }
 }

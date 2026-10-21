@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 280" width="200" height="280" role="img" aria-label="Ondas de Água">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3498db"/>
+      <stop offset="100%" stop-color="#1b527d"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="42%" r="60%">
+      <stop offset="0%" stop-color="#bde3ff" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#bde3ff" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M20 0 H0 V20" fill="none" stroke="#ffffff" stroke-width="0.6" opacity="0.07"/>
+    </pattern>
+  </defs>
+  <rect width="200" height="280" fill="url(#bg)"/>
+  <rect width="200" height="280" fill="url(#grid)"/>
+  <g transform="rotate(4 100 140)">
+        <rect x="98" y="240" width="10" height="64" fill="#bde3ff" opacity="0.12" rx="2"/>
+        <rect x="128" y="94" width="11" height="56" fill="#bde3ff" opacity="0.12" rx="2"/>
+        <rect x="158" y="188" width="12" height="48" fill="#bde3ff" opacity="0.12" rx="2"/>
+        <rect x="188" y="42" width="13" height="40" fill="#bde3ff" opacity="0.12" rx="2"/>
+        <rect x="34" y="136" width="4" height="32" fill="#bde3ff" opacity="0.12" rx="2"/>
+        <rect x="64" y="230" width="5" height="114" fill="#bde3ff" opacity="0.12" rx="2"/>
+        <rect x="94" y="84" width="6" height="106" fill="#bde3ff" opacity="0.12" rx="2"/>
+  </g>
+  <rect width="200" height="280" fill="url(#glow)"/>
+  <text x="100" y="158.36" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="54" font-weight="700" fill="#ffffff" opacity="0.85">OD</text>
+  <rect x="3" y="3" width="194" height="274" fill="none" stroke="#bde3ff" stroke-width="3" opacity="0.45" rx="8"/>
+  <text x="188" y="266" text-anchor="end" font-family="monospace" font-size="14" fill="#ffffff" opacity="0.55">jutsu037</text>
+</svg>

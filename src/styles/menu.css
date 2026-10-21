@@ -1,0 +1,855 @@
+/* ============================================================
+   NARUTO PIXEL CARD GAME — menu.css
+   --------------------------------------------------------
+   Telas de menu: criação de personagem (#character-area / #cc-*),
+   inventário, loja + carrinho, equipamentos, crafting, baús.
+   ============================================================ */
+
+/* ============================================================
+   NAVEGAÇÃO — auxiliares
+   ============================================================ */
+.nav-spacer { flex: 1; }
+
+.nav-button.sound-btn {
+  font-size: 16px;
+  padding: 6px 12px;
+}
+
+/* ============================================================
+   INVENTÁRIO / LOJA / EQUIP / CRAFT / BAÚS — cabeçalhos
+   ============================================================ */
+#inventory-area h2, #shop-area h2, #equipment-area h2,
+#craft-area h2, #chests-area h2 {
+  color: var(--accent);
+  text-align: center;
+  border-bottom: 1px solid var(--accent);
+  padding-bottom: 5px;
+  margin: 0 0 14px;
+  width: 100%;
+  max-width: 920px;
+  font-size: 1.3em;
+  font-family: var(--font-pixel);
+}
+
+#inventory-area > p, #equipment-area > p,
+#craft-area > p, #chests-area > p {
+  color: var(--muted);
+  text-align: center;
+  max-width: 920px;
+  width: 100%;
+  margin: 0 0 12px;
+  font-size: 0.92em;
+}
+
+/* ============================================================
+   GRADES DE CONTEÚDO DO MENU
+   ============================================================ */
+#inventory-display, #shop-display, #equipment-content,
+#craft-content, #chests-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  align-content: flex-start;
+  padding: 8px;
+  width: 100%;
+  max-width: 920px;
+}
+
+/* ============================================================
+   INVENTÁRIO — categorias e grade de cartas
+   ============================================================ */
+.inventory-category {
+  width: 100%;
+  border: 1px solid var(--bg-panel-light);
+  border-radius: 6px;
+  margin-bottom: 14px;
+  background-color: rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.inventory-category h3 {
+  background-color: var(--bg-panel-light);
+  color: var(--ink);
+  padding: 6px 12px;
+  margin: 0;
+  font-size: 1.05em;
+}
+
+.inventory-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px;
+  justify-content: center;
+}
+
+/* ============================================================
+   LOJA
+   ============================================================ */
+#shop-container {
+  display: flex;
+  gap: 18px;
+  width: 100%;
+  max-width: 920px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+#shop-currency {
+  width: 100%;
+  text-align: center;
+  font-weight: bold;
+  margin: 0 0 12px;
+  color: var(--gold);
+  font-size: 14px;
+}
+
+#shop-display {
+  flex: 1 1 320px;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  align-content: flex-start;
+}
+
+.shop-item {
+  border: 1px solid var(--line);
+  background-color: var(--bg-panel);
+  padding: 10px;
+  border-radius: 6px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: calc(var(--card-w) + 20px); /* carta + margem do padding */
+  transition: border-color 0.25s, transform 0.2s;
+}
+
+.shop-item:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.shop-item .card { margin-bottom: 8px; }
+
+.shop-item-price {
+  font-weight: bold;
+  color: var(--gold);
+  margin: 0 0 8px;
+  font-size: 12px;
+}
+
+.shop-item .buy-button {
+  padding: 5px 10px;
+  font-size: 11px;
+  width: 100%;
+}
+
+/* ============================================================
+   CARRINHO
+   ============================================================ */
+#cart-area {
+  flex: 0 0 220px;
+  border-left: 1px solid var(--line);
+  padding: 10px 0 10px 14px;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+}
+
+#cart-area h3 {
+  margin: 0 0 8px;
+  text-align: center;
+  color: var(--accent);
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 5px;
+  font-size: 1.05em;
+}
+
+#cart-items {
+  max-height: 220px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  padding-right: 4px;
+  scrollbar-width: thin;
+}
+
+.cart-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--line-dark);
+  font-size: 12px;
+  gap: 6px;
+}
+
+.cart-item span:last-child {
+  font-weight: bold;
+  color: var(--gold);
+  white-space: nowrap;
+}
+
+.remove-cart-item-btn {
+  background: var(--danger);
+  color: var(--white);
+  border: none;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 10px;
+  line-height: 18px;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background-color 0.2s;
+}
+
+.remove-cart-item-btn:hover { background: var(--danger-dark); }
+
+#cart-total {
+  margin-top: 10px;
+  font-weight: bold;
+  text-align: right;
+  font-size: 14px;
+  border-top: 1px solid var(--line);
+  padding-top: 6px;
+}
+
+#finalize-purchase-button { margin-top: 10px; width: 100%; }
+
+/* ============================================================
+   EQUIPAMENTOS
+   ============================================================ */
+#equipment-content {
+  display: flex;
+  gap: 18px;
+  width: 100%;
+  max-width: 920px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+#equipment-slots {
+  border: 1px solid var(--line);
+  padding: 10px;
+  border-radius: 6px;
+  background-color: rgba(0, 0, 0, 0.1);
+  flex: 0 0 240px;
+  min-width: 0;
+}
+
+#equipment-slots h4, #equipment-inventory h4 {
+  margin: 0 0 8px;
+  text-align: center;
+  color: var(--accent);
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 5px;
+  font-size: 1em;
+}
+
+.equipment-slot-display {
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--line-dark);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  min-height: calc(var(--card-h) * 0.72 + 8px); /* altura da carta sm + gap */
+}
+
+.equipment-slot-display b {
+  min-width: 70px;
+  flex-shrink: 0;
+}
+
+.equipment-slot-display > span { color: var(--muted); }
+
+#equipment-inventory {
+  border: 1px solid var(--line);
+  padding: 10px;
+  border-radius: 6px;
+  background-color: rgba(0, 0, 0, 0.1);
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+#equipment-inventory > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+#equipment-inventory > div > p {
+  color: var(--muted);
+  font-size: 0.9em;
+  width: 100%;
+  text-align: center;
+  margin: 4px 0;
+}
+
+/* ============================================================
+   CRAFTING E BAÚS
+   ============================================================ */
+.crafting-recipe, .chest-item {
+  border: 1px solid var(--line);
+  background-color: var(--bg-panel);
+  padding: 14px;
+  border-radius: 6px;
+  text-align: center;
+  width: 210px;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.crafting-recipe h4, .chest-item h4 {
+  margin: 0;
+  color: var(--accent);
+  font-size: 1em;
+}
+
+.crafting-recipe p, .chest-item p {
+  margin: 0;
+  font-size: 0.85em;
+  color: var(--muted);
+}
+
+.crafting-recipe ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.85em;
+}
+
+.crafting-recipe .card-display-craft {
+  display: flex;
+  justify-content: center;
+  margin: 4px 0;
+}
+
+#player-materials {
+  width: 100%;
+  margin-top: 16px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+#player-materials h4 {
+  text-align: center;
+  color: var(--accent);
+  margin: 0 0 6px;
+}
+
+#player-materials ul {
+  list-style: none;
+  padding: 0;
+  text-align: center;
+  margin: 0;
+}
+
+#player-materials li {
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+
+/* ============================================================
+   CRIAÇÃO DE PERSONAGEM — área e cabeçalho
+   ============================================================ */
+#character-area {
+  align-items: stretch;
+}
+
+#character-creator {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+#character-creator h2 {
+  margin: 0 0 4px;
+  font-family: var(--font-pixel);
+}
+
+#cc-subtitle {
+  color: var(--muted);
+  margin: 0 0 12px;
+  font-size: 13px;
+}
+
+/* ============================================================
+   CRIAÇÃO DE PERSONAGEM — passos
+   ============================================================ */
+#cc-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.cc-step {
+  font-size: 12px;
+  padding: 5px 10px;
+  border: 1px solid var(--line-dark);
+  border-radius: 4px;
+  color: var(--muted);
+  background: var(--bg-dark);
+}
+
+.cc-step.active {
+  color: var(--bg);
+  background: var(--accent);
+  border-color: var(--accent-dark);
+  font-weight: bold;
+}
+
+.cc-step.done {
+  color: var(--ink);
+  border-color: var(--accent-dark);
+}
+
+/* ============================================================
+   CRIAÇÃO DE PERSONAGEM — grade de clãs e personagens
+   ============================================================ */
+.cc-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
+.cc-clan-card, .cc-char-card {
+  width: 220px;
+  background: var(--bg-panel);
+  border: 2px solid var(--line-dark);
+  border-radius: 8px;
+  padding: 14px;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.cc-clan-card:hover, .cc-char-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
+}
+
+.cc-clan-card.selected, .cc-char-card.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent), 0 8px 16px rgba(0, 0, 0, 0.4);
+}
+
+.cc-clan-symbol {
+  font-size: 34px;
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.cc-clan-card h3 {
+  margin: 0 0 2px;
+  font-size: 15px;
+}
+
+.cc-clan-village {
+  font-size: 11px;
+  color: var(--accent-light);
+  margin-bottom: 8px;
+}
+
+.cc-clan-card p {
+  font-size: 11px;
+  color: var(--muted);
+  margin: 0 0 8px;
+  line-height: 1.35;
+}
+
+.cc-clan-count {
+  font-size: 11px;
+  color: var(--accent-light);
+}
+
+/* ============================================================
+   CRIAÇÃO DE PERSONAGEM — ficha do personagem
+   ============================================================ */
+.cc-char-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--char-color, var(--accent));
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 18px;
+  margin: 0 auto 8px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+}
+
+.cc-char-card h3 {
+  margin: 0 0 2px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.cc-char-title {
+  font-size: 11px;
+  color: var(--accent-light);
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.cc-char-sig, .cc-review-sig {
+  background: var(--bg-dark);
+  border-left: 3px solid var(--char-color, var(--accent));
+  border-radius: 4px;
+  padding: 6px 8px;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cc-sig-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+
+.cc-char-sig strong, .cc-review-sig strong { font-size: 13px; }
+
+.cc-char-sig small, .cc-review-sig small {
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.3;
+}
+
+.cc-char-desc {
+  font-size: 10.5px;
+  color: var(--muted);
+  line-height: 1.35;
+  margin: 0 0 8px;
+}
+
+.cc-char-element {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--bg-dark);
+  border: 1px solid var(--line-dark);
+}
+
+/* ============================================================
+   CRIAÇÃO DE PERSONAGEM — atributos
+   ============================================================ */
+.cc-attr-header {
+  text-align: center;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.cc-attr-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.cc-attr-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--bg-panel);
+  border: 1px solid var(--line-dark);
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+
+.cc-attr-info { display: flex; flex-direction: column; }
+
+.cc-attr-name {
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.cc-attr-info small {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.cc-attr-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cc-attr-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  border: 1px solid var(--line-dark);
+  background: var(--bg-dark);
+  color: var(--ink);
+  font-size: 16px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.cc-attr-btn:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.cc-attr-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.cc-attr-value {
+  min-width: 26px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 15px;
+}
+
+.cc-attr-added {
+  min-width: 24px;
+  font-size: 11px;
+  color: var(--accent-light);
+}
+
+/* ============================================================
+   CRIAÇÃO DE PERSONAGEM — loja inicial de jutsus
+   ============================================================ */
+.cc-shop-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.cc-shop-grid { align-items: flex-start; }
+
+.cc-shop-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.cc-shop-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+}
+
+.cc-price {
+  color: var(--gold);
+  font-weight: bold;
+}
+
+.cc-buy-btn {
+  font-size: 10px;
+  padding: 3px 8px;
+}
+
+.cc-buy-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Carta já escolhida na loja de jutsus */
+.cc-shop-wrap.cc-picked .card,
+.card.cc-picked {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 12px rgba(230, 126, 34, 0.7);
+}
+
+.cc-picked .cc-buy-btn,
+.cc-buy-btn.cc-picked {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent-dark);
+}
+
+/* ============================================================
+   CRIAÇÃO DE PERSONAGEM — resumo e navegação
+   ============================================================ */
+.cc-summary {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin: 16px 0 10px;
+  font-size: 14px;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+}
+
+.cc-summary.attr-mode {
+  border-color: var(--accent-dark);
+  background: rgba(230, 126, 34, 0.10);
+}
+
+.cc-summary.shop-mode {
+  border-color: var(--gold);
+  background: rgba(241, 196, 15, 0.08);
+}
+
+#cc-nav {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+/* ============================================================
+   CRIAÇÃO DE PERSONAGEM — revisão final
+   ============================================================ */
+.cc-review {
+  max-width: 620px;
+  margin: 0 auto;
+  background: var(--bg-panel);
+  border: 2px solid var(--line-dark);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.cc-review-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.cc-review-head .cc-char-avatar { margin: 0; }
+
+.cc-review-head h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.cc-review-head .cc-char-title { text-align: left; }
+
+.cc-review-attrs, .cc-review-derived {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+
+.cc-review-derived { color: var(--accent-light); }
+
+.cc-review-deck {
+  border-top: 1px solid var(--line-dark);
+  padding-top: 10px;
+}
+
+.cc-review-deck h4 {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+
+.cc-review-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.cc-chip {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--bg-dark);
+  border: 1px solid var(--line-dark);
+}
+
+.cc-empty {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.cc-review-coins {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--gold);
+}
+
+/* ============================================================
+   CRIAÇÃO DE PERSONAGEM — resultado final
+   ============================================================ */
+#cc-result {
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+.cc-result-card {
+  background: var(--bg-panel);
+  border: 2px solid var(--char-color, var(--accent));
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.4);
+}
+
+.cc-result-card h2 {
+  margin: 0 0 2px;
+  color: var(--char-color, var(--accent));
+  font-family: var(--font-pixel);
+}
+
+.cc-saved-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.cc-result-stats, .cc-result-derived {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  justify-content: center;
+  margin: 14px 0;
+  font-size: 13px;
+}
+
+.cc-result-derived { color: var(--accent-light); }
+
+.cc-result-card .game-button { margin: 6px; }
+
+/* Obs.: os blocos @media (responsivo) estão consolidados em battle.css,
+   conforme a organização definida para a reestruturação do projeto. */
+
+/* ---------------------------------------------------------- views da criação */
+.cc-view {
+    display: block;
+    width: 100%;
+    animation: cc-fade-in 0.25s ease;
+}
+
+.cc-view[hidden] {
+    display: none;
+}
+
+@keyframes cc-fade-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}

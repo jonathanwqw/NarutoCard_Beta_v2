@@ -1,7 +1,7 @@
 services:
   - type: web
-    name: naruto-card-online
-    env: node
-    buildCommand: npm install
-    startCommand: npm start
+    name: naruto-card
+    runtime: static
+    buildCommand: npm run build
+    staticPublishPath: ./dist
     autoDeploy: true

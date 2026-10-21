@@ -1,0 +1,681 @@
+/* ============================================================
+   NARUTO PIXEL CARD GAME — base.css
+   --------------------------------------------------------
+   Reset, tokens (cores/tipografia/escala de cartas), layout
+   geral, navegação superior, botões, scrollbars, tooltips e
+   componentes compartilhados entre menu e combate (cartas,
+   status effects, log de batalha).
+   ============================================================ */
+
+/* --- Fonte pixel do jogo (deve vir antes de qualquer regra) --- */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+/* ============================================================
+   TOKENS / VARIÁVEIS CSS
+   ============================================================ */
+:root {
+  /* --- Tipografia --- */
+  --font-pixel: 'Press Start 2P', 'Courier New', Courier, monospace;
+  --font-mono: 'Courier New', Courier, monospace;
+
+  /* --- Escala única de cartas (todos os tamanhos derivam daqui) --- */
+  --card-w: 72px;
+  --card-h: 118px;
+  --card-pad: 4px;
+  --card-radius: 5px;
+  --card-font: 8px;
+  --card-name-h: 14px;
+  --card-art-h: 34px;
+  --card-type-h: 11px;
+  --card-desc-h: 30px;
+  --card-stats-h: 14px;
+  --cost-size: 16px;
+
+  /* --- Cores base da interface --- */
+  --bg: #2c3e50;
+  --bg-dark: #1a2531;
+  --bg-panel: #34495e;
+  --bg-panel-light: #4e6a85;
+  --ink: #ecf0f1;
+  --muted: #95a5a6;
+  --line: #7f8c8d;
+  --line-dark: #566573;
+  --accent: #e67e22;
+  --accent-dark: #d35400;
+  --accent-light: #f39c12;
+  --danger: #e74c3c;
+  --danger-dark: #c0392b;
+  --danger-light: #ff6b6b;
+  --gold: #f1c40f;
+
+  /* --- Cores semânticas (dano/cura/chakra/defesa) --- */
+  --success: #2ecc71;
+  --success-dark: #27ae60;
+  --info: #3498db;
+  --info-dark: #2980b9;
+  --info-light: #5dade2;
+  --chakra: #3498db;
+  --chakra-dark: #2980b9;
+  --chakra-light: #5dade2;
+  --defense: #95a5a6;
+  --defense-dark: #7f8c8d;
+  --defense-light: #aab7b8;
+  --purple: #9b59b6;
+  --purple-dark: #71368a;
+  --purple-deep: #5b2c6f;
+  --purple-shadow: #4a235a;
+  --teal: #1abc9c;
+  --teal-dark: #16a085;
+  --bleed: #a00000;
+  --white: #fff;
+
+  /* --- Cores da carta (papel, tinta, borda) --- */
+  --card-ink: #2c3e50;
+  --card-paper: #bdc3c7;
+  --card-border: #1a1a1a;
+
+  /* --- Cores de ELEMENTO (Vento / Fogo / Raio / Água / Terra / Nenhum) --- */
+  --element-vento: #1abc9c;
+  --element-fogo: #e67e22;
+  --element-raio: #f1c40f;
+  --element-agua: #3498db;
+  --element-terra: #8e6e53;
+  --element-nenhum: #95a5a6;
+
+  /* --- Cores de TIPO de carta --- */
+  --type-jutsu: #3498db;
+  --type-taijutsu: #e74c3c;
+  --type-defesa: #2ecc71;
+  --type-item: #f1c40f;
+  --type-buff: #9b59b6;
+  --type-debuff: #7f8c8d;
+  --type-invocacao: #e67e22;
+  --type-armadura: #5d6d7e;
+  --type-arma: #ae8a6f;
+  --type-modo: #d35400;
+  --type-material: #b0a89e;
+}
+
+/* ============================================================
+   RESET E BASE
+   ============================================================ */
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  background-color: var(--bg);
+  color: var(--ink);
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- Fundo do app (cenário ninja + grade sutil) --- */
+body {
+  background:
+    radial-gradient(circle at 50% -10%, rgba(230, 126, 34, 0.15), transparent 55%),
+    radial-gradient(circle at 15% 110%, rgba(52, 152, 219, 0.12), transparent 45%),
+    radial-gradient(circle at 85% 110%, rgba(155, 89, 182, 0.10), transparent 45%),
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(160deg, #24313f, #1a2531 60%, #131b24);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 34px 34px, 34px 34px, 100% 100%;
+}
+
+/* --- Título base --- */
+h1 {
+  grid-area: header;
+  text-align: center;
+  margin: 4px 0 8px;
+  font-size: 1.2em;
+  font-family: var(--font-pixel);
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 1px solid var(--accent);
+  padding-bottom: 6px;
+}
+
+/* ============================================================
+   LAYOUT GERAL — SEÇÕES DO JOGO
+   ============================================================ */
+.game-section {
+  display: none;
+  flex-grow: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px;
+  background-color: var(--bg);
+}
+
+.game-section.active-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ============================================================
+   NAVEGAÇÃO SUPERIOR
+   ============================================================ */
+#top-nav {
+  background-color: var(--bg-dark);
+  padding: 6px 10px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  border-bottom: 2px solid var(--accent);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.nav-button {
+  padding: 8px 14px;
+  cursor: pointer;
+  background-color: var(--bg-panel);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-family: inherit;
+  font-weight: bold;
+  font-size: 13px;
+  transition: background-color 0.25s, transform 0.15s, box-shadow 0.2s;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.nav-button:hover {
+  background-color: var(--bg-panel-light);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.nav-button:active { transform: translateY(0); }
+
+.nav-button.active {
+  background-color: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent-dark);
+}
+
+.nav-button.active:hover { background-color: var(--accent-light); }
+
+/* Link de batalha */
+.nav-button.nav-link {
+  background: linear-gradient(90deg, var(--danger), var(--danger-dark));
+  color: var(--white);
+  border-color: var(--danger-dark);
+}
+
+.nav-button.nav-link:hover {
+  background: linear-gradient(90deg, var(--danger-light), var(--danger));
+}
+
+/* Abas bloqueadas até criar o personagem */
+.nav-button.nav-locked {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(0.8);
+}
+
+.nav-button.nav-locked:hover {
+  transform: none;
+  box-shadow: none;
+  background-color: var(--bg-panel);
+}
+
+.nav-button.nav-locked.nav-link,
+.nav-button.nav-locked.nav-link:hover {
+  background: var(--bg-panel);
+  border-color: var(--line-dark);
+  color: var(--muted);
+}
+
+/* ============================================================
+   BOTÕES
+   ============================================================ */
+.game-button {
+  padding: 8px 16px;
+  cursor: pointer;
+  background-color: var(--accent);
+  color: var(--bg);
+  border: 1px solid var(--accent-dark);
+  border-radius: 9px;
+  font-family: inherit;
+  font-weight: bold;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: transform 0.1s, box-shadow 0.1s, background-color 0.2s;
+  box-shadow: 0 3px 0 var(--accent-dark), 0 4px 10px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.game-button:hover {
+  background-color: var(--accent-light);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 0 var(--accent-dark), 0 6px 14px rgba(0, 0, 0, 0.4);
+}
+
+/* Relevo de botão (não se aplica a botões desabilitados) */
+.game-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 0 var(--accent-dark), 0 6px 14px rgba(0, 0, 0, 0.4);
+}
+
+.game-button:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--accent-dark);
+}
+
+.game-button:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--accent-dark);
+}
+
+.game-button:disabled {
+  background-color: var(--muted);
+  color: var(--ink);
+  border-color: var(--line);
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+/* Variante primária (destaque) */
+.game-button.primary {
+  background: linear-gradient(180deg, var(--accent-light), var(--accent-dark));
+  border-color: var(--accent-dark);
+  font-size: 1em;
+}
+
+.game-button.primary:hover:not(:disabled) {
+  background-color: var(--accent-light);
+}
+
+/* Variante secundária */
+.game-button.secondary {
+  background-color: var(--line-dark);
+  border-color: var(--line);
+  font-size: 0.85em;
+}
+
+/* Botão compacto */
+.btn-small {
+  padding: 4px 10px;
+  font-size: 10px;
+  background-color: var(--line);
+  border-color: var(--line-dark);
+  color: var(--ink);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.btn-small:hover {
+  background-color: var(--bg-panel-light);
+}
+
+/* ============================================================
+   SCROLLBARS
+   ============================================================ */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); border-radius: 4px; }
+::-webkit-scrollbar-thumb {
+  background: var(--accent-dark);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* ============================================================
+   TOOLTIP BASE
+   ============================================================ */
+.custom-tooltip {
+  position: absolute;
+  z-index: 2000;
+  background: var(--bg-dark);
+  color: var(--ink);
+  border: 2px solid var(--accent);
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  transform: scale(0.95) translateY(5px);
+  max-width: 260px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.custom-tooltip.visible {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.custom-tooltip h4 {
+  margin: 0 0 6px;
+  color: var(--accent-light);
+  font-size: 1em;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 3px;
+}
+
+.custom-tooltip p {
+  margin: 4px 0;
+  line-height: 1.3;
+  color: var(--muted);
+}
+
+.custom-tooltip .tooltip-cost {
+  font-weight: bold;
+  color: var(--chakra);
+  margin: 2px 0;
+}
+
+.custom-tooltip .tooltip-element {
+  color: var(--gold);
+  margin: 4px 0 0;
+  font-style: italic;
+}
+
+.custom-tooltip .tooltip-stats span {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+}
+
+/* ============================================================
+   CARTAS — sistema unificado de dimensionamento
+   .card (mão) | .card--sm (equip slot) | .card--md (inventário)
+   ============================================================ */
+.card {
+  --cw: var(--card-w);
+  --ch: var(--card-h);
+  width: var(--cw);
+  height: var(--ch);
+  min-width: var(--cw);
+  min-height: var(--ch);
+  border: 2px solid rgba(0, 0, 0, 0.6);
+  background-color: var(--card-paper);
+  display: flex;
+  flex-direction: column;
+  padding: var(--card-pad);
+  font-size: var(--card-font);
+  cursor: pointer;
+  position: relative;
+  color: var(--card-ink);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  flex-shrink: 0;
+  border-radius: var(--card-radius);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.card:hover {
+  transform: scale(1.08) translateY(-3px);
+  box-shadow: 0 4px 12px rgba(236, 240, 241, 0.8), 0 0 5px var(--accent);
+  border-color: var(--white);
+  z-index: 10;
+}
+
+/* Variantes de tamanho — mesma estrutura interna, escala diferente */
+.card--sm {
+  --cw: 52px;
+  --ch: 84px;
+  --card-font: 6px;
+  --card-pad: 2px;
+  --card-name-h: 10px;
+  --card-art-h: 22px;
+  --card-type-h: 8px;
+  --card-desc-h: 16px;
+  --card-stats-h: 10px;
+  --cost-size: 12px;
+}
+
+.card--md {
+  --cw: 62px;
+  --ch: 102px;
+  --card-font: 7px;
+  --card-pad: 3px;
+  --card-name-h: 12px;
+  --card-art-h: 28px;
+  --card-type-h: 9px;
+  --card-desc-h: 24px;
+  --card-stats-h: 12px;
+  --cost-size: 14px;
+}
+
+/* Nome — largura reservada para o badge de custo */
+.card-name {
+  font-weight: bold;
+  font-size: 1em;
+  text-align: center;
+  padding: 1px 18px 1px 1px;
+  background-color: rgba(0, 0, 0, 0.1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  height: var(--card-name-h);
+  line-height: var(--card-name-h);
+  flex-shrink: 0;
+}
+
+/* Badge de custo — canto sup. direito, sem cobrir o nome */
+.card-cost {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background-color: var(--chakra);
+  color: var(--white);
+  border-radius: 50%;
+  width: var(--cost-size);
+  height: var(--cost-size);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.95em;
+  font-weight: bold;
+  border: 1px solid var(--white);
+  z-index: 2;
+  line-height: 1;
+}
+
+/* Arte/placeholder */
+.card-image-placeholder {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 2.1em;
+  font-weight: bold;
+  margin: 3px 0;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.08) 70%),
+    rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.35);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Ícone do elemento no canto da arte */
+.card-element-icon {
+  position: absolute;
+  top: 2px;
+  left: 3px;
+  font-size: 0.55em;
+  opacity: 0.95;
+  filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.6));
+}
+
+/* Badge do elemento (canto inferior direito) */
+.card-element {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  font-size: 0.7em;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.5);
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+/* Tipo */
+.card-type {
+  font-size: 0.9em;
+  font-style: italic;
+  text-align: center;
+  padding: 0 1px;
+  background-color: rgba(0, 0, 0, 0.05);
+  height: var(--card-type-h);
+  line-height: var(--card-type-h);
+  flex-shrink: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Descrição — ocupa o espaço restante, com scroll interno se precisar */
+.card-desc {
+  font-size: 0.9em;
+  margin-top: 2px;
+  line-height: 1.15;
+  flex: 0 0 var(--card-desc-h);
+  max-height: var(--card-desc-h);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  padding-right: 1px;
+}
+
+/* Stats da rodapé */
+.card-stats {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  font-size: 1em;
+  margin-top: 2px;
+  padding-top: 2px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  height: var(--card-stats-h);
+  flex-shrink: 0;
+  gap: 2px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.card-stats span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Cores por tipo de carta */
+.card.type-jutsu { background-color: var(--type-jutsu); color: var(--white); }
+.card.type-taijutsu { background-color: var(--type-taijutsu); color: var(--white); }
+.card.type-defesa { background-color: var(--type-defesa); color: var(--white); }
+.card.type-item { background-color: var(--type-item); color: var(--card-ink); }
+.card.type-buff { background-color: var(--type-buff); color: var(--white); }
+.card.type-debuff { background-color: var(--type-debuff); color: var(--white); }
+.card.type-invocação { background-color: var(--type-invocacao); color: var(--white); }
+.card.type-armadura { background-color: var(--type-armadura); color: var(--white); }
+.card.type-arma { background-color: var(--type-arma); color: var(--white); }
+.card.type-modo { background-color: var(--type-modo); color: var(--white); }
+.card.type-material { background-color: var(--type-material); color: var(--card-ink); }
+
+/* Quantidade (inventário) */
+.card-quantity {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  background-color: rgba(0, 0, 0, 0.65);
+  color: var(--white);
+  font-size: 0.9em;
+  padding: 1px 4px;
+  border-radius: 3px;
+  z-index: 2;
+  line-height: 1.2;
+}
+
+/* ============================================================
+   STATUS EFFECTS E TEMP STATS
+   ============================================================ */
+.status-effects, .temp-stats {
+  margin-top: 4px;
+  font-size: 10px;
+  min-height: 16px;
+  border-top: 1px dashed var(--line);
+  padding-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.temp-stats span {
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.status-effect-icon {
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: bold;
+  border: 1px solid;
+}
+
+.effect-buff { background-color: var(--success-dark); color: var(--white); border-color: var(--success); }
+.effect-debuff { background-color: var(--danger-dark); color: var(--white); border-color: var(--danger); }
+.effect-dot { background-color: var(--purple); color: var(--white); border-color: var(--purple); }
+.effect-bleed { background-color: var(--bleed); color: var(--white); border-color: var(--danger); animation: bleed-blink 1.2s ease-in-out infinite; }
+.effect-hot { background-color: var(--teal-dark); color: var(--white); border-color: var(--teal); }
+.effect-stun { background-color: var(--accent-light); color: var(--bg); border-color: var(--gold); }
+.effect-defense_percent { background-color: var(--info-dark); color: var(--white); border-color: var(--info); }
+
+/* ============================================================
+   LOG DE BATALHA — cores por tipo de mensagem
+   ============================================================ */
+.log-critical { color: var(--gold); font-weight: bold; }
+.log-damage { color: #e8a0a0; }
+.log-heal { color: #a0e8a0; }
+.log-system { color: var(--accent-light); }
+.log-status { color: #a0c8e8; }
+
+#message-log p.log-critical { color: var(--gold); font-weight: bold; }
+#message-log p.log-damage { color: #e8a0a0; }
+#message-log p.log-heal { color: #a0e8a0; }
+#message-log p.log-system { color: var(--accent-light); }
+#message-log p.log-status { color: #a0c8e8; }
+
+/* ============================================================
+   ANIMAÇÕES COMUNS
+   ============================================================ */
+
+/* Sombra que some embaixo das barras */
+@keyframes fadeOutShadow {
+  0% { opacity: 0.7; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(5px); }
+}
+
+/* Piscar do efeito de sangramento */
+@keyframes bleed-blink {
+  0%, 100% { box-shadow: 0 0 2px rgba(231, 76, 60, 0.4); opacity: 1; }
+  50% { box-shadow: 0 0 10px rgba(231, 76, 60, 0.9); opacity: 0.75; }
+}
+
+/* Entrada suave genérica */
+@keyframes fade-in-up {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}

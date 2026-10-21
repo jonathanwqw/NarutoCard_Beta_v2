@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 280" width="200" height="280" role="img" aria-label="Chamas do Dragão">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e67e22"/>
+      <stop offset="100%" stop-color="#8a4409"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="42%" r="60%">
+      <stop offset="0%" stop-color="#ffd0a8" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#ffd0a8" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M20 0 H0 V20" fill="none" stroke="#ffffff" stroke-width="0.6" opacity="0.07"/>
+    </pattern>
+  </defs>
+  <rect width="200" height="280" fill="url(#bg)"/>
+  <rect width="200" height="280" fill="url(#grid)"/>
+  <g transform="rotate(2 100 140)">
+        <rect x="108" y="70" width="8" height="96" fill="#ffd0a8" opacity="0.12" rx="2"/>
+        <rect x="80" y="226" width="9" height="54" fill="#ffd0a8" opacity="0.12" rx="2"/>
+        <rect x="52" y="142" width="10" height="102" fill="#ffd0a8" opacity="0.12" rx="2"/>
+        <rect x="24" y="58" width="11" height="60" fill="#ffd0a8" opacity="0.12" rx="2"/>
+        <rect x="180" y="214" width="12" height="108" fill="#ffd0a8" opacity="0.12" rx="2"/>
+  </g>
+  <rect width="200" height="280" fill="url(#glow)"/>
+  <text x="100" y="158.36" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="54" font-weight="700" fill="#ffffff" opacity="0.85">CD</text>
+  <rect x="3" y="3" width="194" height="274" fill="none" stroke="#ffd0a8" stroke-width="3" opacity="0.45" rx="8"/>
+  <text x="188" y="266" text-anchor="end" font-family="monospace" font-size="14" fill="#ffffff" opacity="0.55">jutsu035</text>
+</svg>
