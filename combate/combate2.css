@@ -213,31 +213,42 @@ body { display: flex; flex-direction: column; }
   height: 18px;
   margin-top: -4px;
   pointer-events: none;
+  overflow: visible;
+  z-index: 10;
 }
 
 .floating-number {
   position: absolute;
-  left: 50%; bottom: 0;
+  left: 50%;
+  bottom: 0;
   transform: translateX(-50%);
   font-size: 12px;
   font-weight: bold;
   padding: 2px 5px;
   border-radius: 3px;
   opacity: 0;
-  animation: floatUpAndFade 2s ease-out forwards;
+  animation: floatUpAndFade 2.2s ease-out forwards;
   white-space: nowrap;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.9), 0 0 4px rgba(0,0,0,0.7);
+  font-family: 'Courier New', monospace;
 }
 
-.floating-number.damage { color: var(--danger); text-shadow: 0 0 3px var(--danger-dark); }
-.floating-number.heal { color: #2ecc71; text-shadow: 0 0 3px #27ae60; }
-.floating-number.chakra-spent { color: #3498db; text-shadow: 0 0 3px #2980b9; }
-.floating-number.chakra-gained { color: #1abc9c; text-shadow: 0 0 3px #16a085; }
-.floating-number.defense-gained { color: #bdc3c7; text-shadow: 0 0 3px var(--muted); }
-.floating-number.defense-lost { color: var(--line); text-shadow: 0 0 3px var(--line-dark); }
+.floating-number.damage { color: var(--danger); text-shadow: 0 0 3px var(--danger-dark), 1px 1px 2px #000; }
+.floating-number.heal { color: #2ecc71; text-shadow: 0 0 3px #27ae60, 1px 1px 2px #000; }
+.floating-number.chakra-spent { color: #3498db; text-shadow: 0 0 3px #2980b9, 1px 1px 2px #000; }
+.floating-number.chakra-gained { color: #1abc9c; text-shadow: 0 0 3px #16a085, 1px 1px 2px #000; }
+.floating-number.defense-gained { color: #ecf0f1; text-shadow: 0 0 3px var(--muted), 1px 1px 2px #000; }
+.floating-number.defense-lost { color: #95a5a6; text-shadow: 0 0 3px var(--line-dark), 1px 1px 2px #000; }
+.floating-number.crit { color: var(--gold); font-size: 14px; text-shadow: 0 0 4px var(--gold), 1px 1px 2px #000; }
+.floating-number.stun { color: var(--gold); text-shadow: 0 0 3px var(--gold), 1px 1px 2px #000; }
+.floating-number.bleed { color: #e74c3c; text-shadow: 0 0 3px #c0392b, 1px 1px 2px #000; }
+.floating-number.dodge { color: #1abc9c; font-weight: bold; text-shadow: 0 0 6px rgba(26,188,156,0.9), 1px 1px 2px #000; }
 
 @keyframes floatUpAndFade {
-  0% { opacity: 1; transform: translate(-50%, 0); }
-  100% { opacity: 0; transform: translate(-50%, -25px); }
+  0% { opacity: 0; transform: translate(-50%, 0) scale(0.7); }
+  15% { opacity: 1; transform: translate(-50%, -2px) scale(1.1); }
+  30% { opacity: 1; transform: translate(-50%, -8px) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -30px) scale(0.9); }
 }
 
 /* Status Effects e Temp Stats */
@@ -963,7 +974,7 @@ body { display: flex; flex-direction: column; }
   top: 50%;
   font-family: 'Press Start 2P', 'Courier New', monospace;
   font-weight: bold;
-  z-index: 50;
+  z-index: 60;
   pointer-events: none;
   animation: float-up-fade 3.5s ease forwards;
   text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 0 0 8px rgba(0,0,0,0.8);

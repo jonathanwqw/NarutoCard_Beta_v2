@@ -81,6 +81,8 @@ function renderStatusEffects(containerId, effects) {
     });
 }
 
+document.addEventListener("click", () => { if (window.gameAudio) { gameAudio.init(); gameAudio.resume(); } }, { passive: true });
+
 socket.on("connect", () => {
     document.getElementById("online-status-text").textContent = "Conectado. Entrando na fila...";
     myCharacter = loadMyCharacter();

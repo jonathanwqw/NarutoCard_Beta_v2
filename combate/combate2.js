@@ -311,7 +311,8 @@ document.addEventListener("DOMContentLoaded", () => {
             else { updateComboChargeSound(); }
         });
     }
-    document.addEventListener("click", () => { gameAudio.init(); gameAudio.resume(); }, { once: true });
+    document.addEventListener("click", () => { gameAudio.init(); gameAudio.resume(); }, { passive: true });
+    document.addEventListener("touchstart", () => { gameAudio.init(); gameAudio.resume(); }, { passive: true, once: true });
 
     // --- Scroll ---
     function initializeHandScrolling() {
@@ -505,9 +506,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const doIt = () => {
             const el = document.createElement("div");
             el.classList.add("floating-number", type);
-            el.textContent = (value > 0 && (type === "heal" || type === "chakra-gained" || type === "defense-gained")) ? `+${value}` : `${value}`;
+            let txt = value;
+            if (typeof value === "number") {
+                if (value > 0 && (type === "heal" || type === "chakra-gained" || type === "defense-gained")) txt = `+${value}`;
+                else if (value < 0 && type !== "dodge") txt = `${value}`;
+                else txt = `${value}`;
+            }
+            el.textContent = txt;
             feedbackElement.appendChild(el);
-            setTimeout(() => el.remove(), 3600);
+            setTimeout(() => { try { el.remove(); } catch (e) {} }, 4000);
         };
         if (delay > 0) setTimeout(doIt, delay); else doIt();
     }

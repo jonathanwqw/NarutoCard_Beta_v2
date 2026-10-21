@@ -4,7 +4,8 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("Jogo Naruto Pixel Card Game iniciado e DOM carregado!");
 
     // Inicializa áudio
-    document.addEventListener("click", () => { gameAudio.init(); gameAudio.resume(); }, { once: true });
+    document.addEventListener("click", () => { gameAudio.init(); gameAudio.resume(); }, { passive: true });
+    document.addEventListener("touchstart", () => { gameAudio.init(); gameAudio.resume(); }, { passive: true, once: true });
 
     // Botão de som
     const soundToggle = document.getElementById("sound-toggle");
