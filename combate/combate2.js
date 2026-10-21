@@ -182,6 +182,7 @@ document.addEventListener("DOMContentLoaded", () => {
             attackBoost: 0, critChanceBoost: 0, statusEffects: [], deck: [], hand: [], discardPile: [],
             canPlayCard: true, isStunned: false, fusionMode: false, fusionSelected: [],
             element: "Nenhum",
+            dodgeChance: 0, accuracy: 0.85, characterName: null, jutsuPower: 0,
             healthBarFill: null, chakraBarFill: null, defenseBarFill: null,
             healthBarText: null, chakraBarText: null, defenseBarText: null,
             healthFeedback: null, chakraFeedback: null, defenseFeedback: null,
@@ -831,8 +832,37 @@ document.addEventListener("DOMContentLoaded", () => {
         battleState.combo = { player: { element: null, count: 0 }, opponent: { element: null, count: 0 } };
         battleState.opponent.element = rivalElements[currentRivalName] || "Nenhum";
         battleState.player.element = "Nenhum";
+
+        // Aplica o personagem criado (se houver): atributos, vida/chakra, desvio e elemento do jutsu principal.
+        battleState.player.dodgeChance = 0.10;
+        battleState.player.accuracy = 0.85;
+        battleState.player.characterName = null;
+        battleState.player.jutsuPower = 0;
+        const created = window.NarutoCharacter && window.NarutoCharacter.getCreated && window.NarutoCharacter.getCreated();
+        if (created && created.derived) {
+            const d = created.derived;
+            battleState.player.maxHealth = d.maxHealth;
+            battleState.player.maxChakra = d.maxChakra;
+            battleState.player.maxDefense = d.maxDefense;
+            battleState.player.attackBoost = d.attackBonus;
+            battleState.player.critChanceBoost = Math.max(0, d.critChance - 0.05);
+            battleState.player.dodgeChance = d.dodgeChance;
+            battleState.player.accuracy = d.accuracy;
+            battleState.player.characterName = created.name;
+            battleState.player.element = created.element || "Nenhum";
+            battleState.player.jutsuPower = (created.jutsu && created.jutsu.power) || 0;
+            const pAvatar = document.querySelector("#player-status-side .player-avatar");
+            if (pAvatar) pAvatar.textContent = created.name.split(" ")[0].substring(0, 3).toUpperCase();
+            logMessage(`Personagem: ${created.name} — Jutsu principal: ${created.signature.name}.`, "log-system");
+        }
         battleResultsScreen.classList.remove("visible");
         battleResultsScreen.classList.add("battle-results-screen-hidden");
+
+        // Rival: desvio/precisão moderados (varia com o elemento)
+        battleState.opponent.dodgeChance = 0.10;
+        battleState.opponent.accuracy = 0.88;
+        battleState.opponent.jutsuPower = 55;
+        battleState.opponent.characterName = currentRivalName;
 
         ["player", "opponent"].forEach(type => {
             const t = battleState[type];
@@ -841,8 +871,7 @@ document.addEventListener("DOMContentLoaded", () => {
             t.defense = 0;
             t.attackBoost = 0;
             t.critChanceBoost = 0;
-            t.statusEffects = [];
-            t.hand = [];
+            t.statusEffects = [];            t.hand = [];
             t.discardPile = [];
             t.isStunned = false;
             t.canPlayCard = true;
@@ -958,6 +987,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Dano
         if (card.attack > 0) {
+            // --- Desvio estilo Elden Ring ---
+            // Chance base do defensor, reduzida pela precisão e pela "força do jutsu" do atacante.
+            const defenderDodge = target.dodgeChance || 0;
+            const attackerAccuracy = caster.accuracy || 0.85;
+            const jutsuScale = ((card.attack + (caster.jutsuPower || 0) * 0.4) / 100); // jutsus fortes são mais difíceis de desviar
+            let dodgeRoll = defenderDodge * attackerAccuracy * (1 - Math.min(0.6, jutsuScale * 0.5));
+            dodgeRoll = Math.max(0, Math.min(0.6, dodgeRoll));
+            if (dodgeRoll > 0 && Math.random() < dodgeRoll) {
+                logMessage(`${capitalize(targetKey)} DESVIOU de ${card.name}!`, "log-status");
+                showFloatingNumber("DESVIO", "dodge", target.healthFeedback);
+                animateHeal(targetKey);
+                sfx("shield");
+                return;
+            }
+
             const defenderElement = null; // elemento do defensor (poderíamos ter um por lutador)
             const elemResult = getElementMultiplier(card.element, defenderElement);
             const hits = card.hits || 1;

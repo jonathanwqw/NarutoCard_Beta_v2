@@ -8,6 +8,7 @@
 </head>
 <body>
     <nav id="top-nav">
+        <button id="nav-character" class="nav-button">Personagem</button>
         <button id="nav-combat" class="nav-button active">Combate</button>
         <button id="nav-inventory" class="nav-button">Inventário</button>
         <button id="nav-shop" class="nav-button">Loja</button>
@@ -18,6 +19,40 @@
         <span class="nav-spacer"></span>
         <button id="sound-toggle" class="nav-button sound-btn" title="Ligar/Desligar som">🔊</button>
     </nav>
+
+    <div id="character-area" class="game-section">
+        <div id="character-creator">
+            <h2 id="cc-title">Criação de Personagem</h2>
+            <p id="cc-subtitle">Escolha seu clã, seu personagem, distribua atributos e monte seu deck inicial.</p>
+            <div id="cc-steps">
+                <span class="cc-step" data-step="clan">1. Clã</span>
+                <span class="cc-step" data-step="character">2. Personagem</span>
+                <span class="cc-step" data-step="attributes">3. Atributos</span>
+                <span class="cc-step" data-step="shop">4. Cartas</span>
+                <span class="cc-step" data-step="review">5. Confirmar</span>
+            </div>
+
+            <div id="cc-stage">
+                <div id="cc-clan-view" class="cc-view"></div>
+                <div id="cc-character-view" class="cc-view" hidden></div>
+                <div id="cc-attributes-view" class="cc-view" hidden></div>
+                <div id="cc-shop-view" class="cc-view" hidden></div>
+                <div id="cc-review-view" class="cc-view" hidden></div>
+            </div>
+
+            <div id="cc-summary" class="cc-summary">
+                <span>Pontos restantes: <strong id="cc-points-left">12</strong></span>
+                <span>Moedas: <strong id="cc-coins-left">1500</strong></span>
+            </div>
+
+            <div id="cc-nav">
+                <button id="cc-back" class="game-button btn-small">Voltar</button>
+                <button id="cc-next" class="game-button">Avançar</button>
+            </div>
+        </div>
+
+        <div id="cc-result" hidden></div>
+    </div>
 
     <div id="game-area" class="game-section active-section">
         <div id="game-container">
@@ -106,6 +141,7 @@
     </div>
 
     <script src="../combate/audio.js"></script>
+    <script src="character.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

@@ -1124,6 +1124,436 @@ document.addEventListener("DOMContentLoaded", () => {
         return content;
     }
 
+    // --- Criação de Personagem ---
+    const CC = window.NarutoCharacter;
+    const ccEls = {
+        stage: document.getElementById("cc-stage"),
+        title: document.getElementById("cc-title"),
+        subtitle: document.getElementById("cc-subtitle"),
+        steps: document.querySelectorAll("#cc-steps .cc-step"),
+        clanView: document.getElementById("cc-clan-view"),
+        charView: document.getElementById("cc-character-view"),
+        attrView: document.getElementById("cc-attributes-view"),
+        shopView: document.getElementById("cc-shop-view"),
+        reviewView: document.getElementById("cc-review-view"),
+        pointsLeft: document.getElementById("cc-points-left"),
+        coinsLeft: document.getElementById("cc-coins-left"),
+        summary: document.getElementById("cc-summary"),
+        backBtn: document.getElementById("cc-back"),
+        nextBtn: document.getElementById("cc-next"),
+        result: document.getElementById("cc-result"),
+        creator: document.getElementById("character-creator")
+    };
+
+    const CC_ORDER = ["clan", "character", "attributes", "shop", "review"];
+
+    function ccRenderSteps() {
+        const idx = CC_ORDER.indexOf(CC.creationState.step);
+        ccEls.steps.forEach((el) => {
+            const i = CC_ORDER.indexOf(el.dataset.step);
+            el.classList.toggle("active", i === idx);
+            el.classList.toggle("done", i < idx);
+        });
+    }
+
+    function ccShowView(view) {
+        ["clanView", "charView", "attrView", "shopView", "reviewView"].forEach((k) => {
+            ccEls[k].hidden = true;
+        });
+        ccEls[view].hidden = false;
+    }
+
+    function ccUpdateSummary() {
+        if (ccEls.pointsLeft) ccEls.pointsLeft.textContent = CC.creationState.points;
+        if (ccEls.coinsLeft) ccEls.coinsLeft.textContent = CC.creationState.coins;
+        const onAttrStep = CC.creationState.step === "attributes";
+        const onShopStep = CC.creationState.step === "shop";
+        if (ccEls.summary) ccEls.summary.classList.toggle("attr-mode", onAttrStep);
+        if (ccEls.summary) ccEls.summary.classList.toggle("shop-mode", onShopStep);
+    }
+
+    function ccRender() {
+        ccRenderSteps();
+        ccUpdateSummary();
+
+        ccEls.nextBtn.textContent = CC.creationState.step === "review" ? "Confirmar Personagem" : "Avançar";
+        ccEls.backBtn.disabled = CC.creationState.step === "clan";
+        ccEls.nextBtn.disabled = !ccCanAdvance();
+
+        const renderers = {
+            clan: ccRenderClans,
+            character: ccRenderCharacters,
+            attributes: ccRenderAttributes,
+            shop: ccRenderShop,
+            review: ccRenderReview
+        };
+        renderers[CC.creationState.step]();
+    }
+
+    function ccCanAdvance() {
+        const s = CC.creationState;
+        switch (s.step) {
+            case "clan": return !!s.clanId;
+            case "character": return !!s.charId;
+            case "attributes": return s.points === 0;
+            case "shop": return true;
+            case "review": return true;
+            default: return false;
+        }
+    }
+
+    function ccRenderClans() {
+        ccShowView("clanView");
+        ccEls.title.textContent = "Escolha seu Clã";
+        ccEls.subtitle.textContent = "Cada clã possui um estilo de combate e um pool de cartas próprios.";
+        ccEls.clanView.innerHTML = "";
+        const grid = document.createElement("div");
+        grid.className = "cc-grid";
+        Object.values(CC.clans).forEach((clan) => {
+            const card = document.createElement("div");
+            card.className = "cc-clan-card" + (CC.creationState.clanId === clan.id ? " selected" : "");
+            card.style.setProperty("--clan-color", clan.color);
+            card.innerHTML = `
+                <div class="cc-clan-symbol">${clan.symbol}</div>
+                <h3>${clan.name}</h3>
+                <div class="cc-clan-village">${clan.village} · ${clan.element}</div>
+                <p>${clan.desc}</p>
+                <div class="cc-clan-count">${Object.keys(clan.characters).length} personagens</div>
+            `;
+            card.addEventListener("click", () => {
+                CC.creationState.clanId = clan.id;
+                CC.creationState.charId = null;
+                sfx("card");
+                ccRender();
+            });
+            grid.appendChild(card);
+        });
+        ccEls.clanView.appendChild(grid);
+    }
+
+    function ccRenderCharacters() {
+        ccShowView("charView");
+        const clan = CC.getClan(CC.creationState.clanId);
+        ccEls.title.textContent = clan ? clan.name : "Personagens";
+        ccEls.subtitle.textContent = "Escolha seu personagem. Cada um traz um jutsu principal exclusivo.";
+        ccEls.charView.innerHTML = "";
+        const grid = document.createElement("div");
+        grid.className = "cc-grid";
+        Object.values(clan.characters).forEach((char) => {
+            const card = document.createElement("div");
+            card.className = "cc-char-card" + (CC.creationState.charId === char.id ? " selected" : "");
+            card.style.setProperty("--char-color", char.color);
+            card.innerHTML = `
+                <div class="cc-char-avatar">${char.name.split(" ")[0][0]}${char.name.split(" ")[1] ? char.name.split(" ")[1][0] : ""}</div>
+                <h3>${char.name}</h3>
+                <div class="cc-char-title">${char.title}</div>
+                <div class="cc-char-sig">
+                    <span class="cc-sig-label">Jutsu Principal</span>
+                    <strong>${char.signature.name}</strong>
+                    <small>${char.signature.desc}</small>
+                </div>
+                <p class="cc-char-desc">${char.desc}</p>
+                <span class="cc-char-element">${char.element}</span>
+            `;
+            card.addEventListener("click", () => {
+                CC.creationState.charId = char.id;
+                CC.creationState.attributes = CC.totalBaseAttributes(char);
+                CC.creationState.points = CC.ATTR_POINTS_CREATION;
+                sfx("card");
+                ccRender();
+            });
+            grid.appendChild(card);
+        });
+        ccEls.charView.appendChild(grid);
+    }
+
+    function ccRenderAttributes() {
+        ccShowView("attrView");
+        const char = CC.getCharacter(CC.creationState.clanId, CC.creationState.charId);
+        ccEls.title.textContent = "Distribua seus Atributos";
+        ccEls.subtitle.textContent = "Gaste os pontos de criação. Você também ganha +3 pontos por nível.";
+        ccEls.attrView.innerHTML = "";
+
+        const header = document.createElement("div");
+        header.className = "cc-attr-header";
+        header.innerHTML = `<strong>${char.name}</strong> — ${char.title}`;
+        ccEls.attrView.appendChild(header);
+
+        const list = document.createElement("div");
+        list.className = "cc-attr-list";
+        Object.keys(CC.ATTRIBUTE_DEFS).forEach((key) => {
+            const def = CC.ATTRIBUTE_DEFS[key];
+            const base = char.baseAttributes[key] || 0;
+            const allocated = CC.creationState.attributes[key];
+            const added = allocated - base;
+            const row = document.createElement("div");
+            row.className = "cc-attr-row";
+            row.innerHTML = `
+                <div class="cc-attr-info">
+                    <span class="cc-attr-name">${def.icon} ${def.label}</span>
+                    <small>${def.desc}</small>
+                </div>
+                <div class="cc-attr-controls">
+                    <button class="cc-attr-btn minus" data-attr="${key}" ${added <= 0 ? "disabled" : ""}>−</button>
+                    <span class="cc-attr-value">${allocated}</span>
+                    <button class="cc-attr-btn plus" data-attr="${key}" ${CC.creationState.points <= 0 ? "disabled" : ""}>+</button>
+                    <span class="cc-attr-added">${added > 0 ? "+" + added : ""}</span>
+                </div>
+            `;
+            list.appendChild(row);
+        });
+        ccEls.attrView.appendChild(list);
+
+        list.querySelectorAll(".cc-attr-btn.plus").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                if (CC.creationState.points <= 0) return;
+                CC.creationState.attributes[btn.dataset.attr]++;
+                CC.creationState.points--;
+                sfx("card");
+                ccRender();
+            });
+        });
+        list.querySelectorAll(".cc-attr-btn.minus").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const char2 = CC.getCharacter(CC.creationState.clanId, CC.creationState.charId);
+                const key = btn.dataset.attr;
+                if (CC.creationState.attributes[key] <= char2.baseAttributes[key]) return;
+                CC.creationState.attributes[key]--;
+                CC.creationState.points++;
+                sfx("card");
+                ccRender();
+            });
+        });
+    }
+
+    function ccRenderShop() {
+        ccShowView("shopView");
+        const clan = CC.getClan(CC.creationState.clanId);
+        ccEls.title.textContent = "Compre suas Cartas Iniciais";
+        ccEls.subtitle.textContent = "Você tem 1.500 moedas. As cartas disponíveis são do seu clã.";
+        ccEls.shopView.innerHTML = "";
+
+        const bar = document.createElement("div");
+        bar.className = "cc-shop-bar";
+        bar.innerHTML = `
+            <span>Carrinho: <strong id="cc-cart-count">${CC.creationState.cart.length}</strong> cartas</span>
+            <span>Custo: <strong id="cc-cart-cost">${ccCartCost()}</strong> moedas</span>
+            <button id="cc-clear-cart" class="game-button btn-small">Limpar</button>
+        `;
+        ccEls.shopView.appendChild(bar);
+
+        const grid = document.createElement("div");
+        grid.className = "cc-grid cc-shop-grid";
+        clan.cardPool.forEach((cardId) => {
+            const data = cardDatabase[cardId];
+            if (!data) return;
+            const price = data.price || 0;
+            const owned = CC.creationState.purchased[cardId] || 0;
+            const inCart = CC.creationState.cart.filter((id) => id === cardId).length;
+            const card = createCardInstance(cardId);
+            const el = card.getHTMLElement();
+            el.classList.add("cc-shop-item");
+            const footer = document.createElement("div");
+            footer.className = "cc-shop-footer";
+            footer.innerHTML = `
+                <span class="cc-price">${price} 🪙</span>
+                <button class="cc-buy-btn game-button btn-small" ${price > CC.creationState.coins ? "disabled" : ""}>Comprar (${inCart})</button>
+            `;
+            footer.querySelector(".cc-buy-btn").addEventListener("click", () => {
+                if (price > CC.creationState.coins) { sfx("error"); return; }
+                CC.creationState.coins -= price;
+                CC.creationState.cart.push(cardId);
+                sfx("draw");
+                ccRender();
+            });
+            const wrapper = document.createElement("div");
+            wrapper.className = "cc-shop-wrap";
+            wrapper.appendChild(el);
+            wrapper.appendChild(footer);
+            grid.appendChild(wrapper);
+        });
+        ccEls.shopView.appendChild(grid);
+
+        const clearBtn = document.getElementById("cc-clear-cart");
+        if (clearBtn) {
+            clearBtn.addEventListener("click", () => {
+                CC.creationState.coins += ccCartCost();
+                CC.creationState.cart = [];
+                sfx("turn");
+                ccRender();
+            });
+        }
+    }
+
+    function ccCartCost() {
+        return CC.creationState.cart.reduce((sum, id) => sum + ((cardDatabase[id] && cardDatabase[id].price) || 0), 0);
+    }
+
+    function ccRenderReview() {
+        ccShowView("reviewView");
+        const char = CC.getCharacter(CC.creationState.clanId, CC.creationState.charId);
+        const clan = CC.getClan(CC.creationState.clanId);
+        const derived = CC.deriveStats(clan.id, char.id, CC.creationState.attributes);
+        ccEls.title.textContent = "Confirme seu Ninja";
+        ccEls.subtitle.textContent = "Revise os dados antes de começar.";
+        ccEls.reviewView.innerHTML = `
+            <div class="cc-review">
+                <div class="cc-review-head" style="--char-color:${char.color}">
+                    <div class="cc-char-avatar">${char.name.split(" ")[0][0]}${char.name.split(" ")[1] ? char.name.split(" ")[1][0] : ""}</div>
+                    <div>
+                        <h3>${char.name}</h3>
+                        <div class="cc-char-title">${char.title} · ${clan.name}</div>
+                        <div class="cc-char-element">${char.element}</div>
+                    </div>
+                </div>
+                <div class="cc-review-sig">
+                    <span class="cc-sig-label">Jutsu Principal</span>
+                    <strong>${char.signature.name}</strong>
+                    <small>${char.signature.desc}</small>
+                </div>
+                <div class="cc-review-attrs">
+                    ${Object.keys(CC.ATTRIBUTE_DEFS).map((k) =>
+                        `<span>${CC.ATTRIBUTE_DEFS[k].icon} ${CC.ATTRIBUTE_DEFS[k].label}: <strong>${CC.creationState.attributes[k]}</strong></span>`
+                    ).join("")}
+                </div>
+                <div class="cc-review-derived">
+                    <span>Vida Máx: <strong>${derived.maxHealth}</strong></span>
+                    <span>Chakra Máx: <strong>${derived.maxChakra}</strong></span>
+                    <span>Desvio: <strong>${Math.round(derived.dodgeChance * 100)}%</strong></span>
+                    <span>Precisão: <strong>${Math.round(derived.accuracy * 100)}%</strong></span>
+                </div>
+                <div class="cc-review-deck">
+                    <h4>Cartas compradas (${CC.creationState.cart.length})</h4>
+                    <div class="cc-review-cards">
+                        ${CC.creationState.cart.length
+                            ? CC.creationState.cart.map((id) => `<span class="cc-chip">${cardDatabase[id].name}</span>`).join("")
+                            : '<span class="cc-empty">Nenhuma carta comprada (você jogará só com as cartas iniciais do personagem).</span>'}
+                    </div>
+                </div>
+                <div class="cc-review-coins">Moedas restantes: <strong>${CC.creationState.coins}</strong></div>
+            </div>
+        `;
+    }
+
+    function ccAdvance() {
+        const s = CC.creationState;
+        if (!ccCanAdvance()) { sfx("error"); return; }
+        const i = CC_ORDER.indexOf(s.step);
+        if (s.step === "review") { ccConfirm(); return; }
+        s.step = CC_ORDER[i + 1];
+        sfx("turn");
+        ccRender();
+    }
+
+    function ccBack() {
+        const s = CC.creationState;
+        const i = CC_ORDER.indexOf(s.step);
+        if (i <= 0) return;
+        s.step = CC_ORDER[i - 1];
+        sfx("card");
+        ccRender();
+    }
+
+    function ccConfirm() {
+        const s = CC.creationState;
+        const char = CC.getCharacter(s.clanId, s.charId);
+        const clan = CC.getClan(s.clanId);
+        const derived = CC.deriveStats(s.clanId, s.charId, s.attributes);
+
+        const character = {
+            clanId: s.clanId,
+            charId: s.charId,
+            name: char.name,
+            title: char.title,
+            element: char.element,
+            color: char.color,
+            clanName: clan.name,
+            signature: char.signature,
+            jutsu: char.jutsu,
+            attributes: Object.assign({}, s.attributes),
+            derived: derived,
+            coinsLeft: s.coins
+        };
+        CC.setCreated(character);
+
+        // Aplica ao perfil do jogador.
+        playerProfile.currency = s.coins;
+        playerProfile.level = 1;
+        playerProfile.xp = 0;
+        playerProfile.xpToNextLevel = 100;
+
+        // Concede as cartas iniciais do personagem + compradas.
+        const grants = {};
+        char.startCards.forEach((id) => { grants[id] = (grants[id] || 0) + 1; });
+        s.cart.forEach((id) => { grants[id] = (grants[id] || 0) + 1; });
+        if (grants[char.jutsu.cardId]) grants[char.jutsu.cardId] += 1;
+        else grants[char.jutsu.cardId] = 1;
+
+        playerProfile.cardCollection = {};
+        for (const id in grants) {
+            playerProfile.cardCollection[id] = { quantity: grants[id], level: 1, xp: 0 };
+        }
+
+        initializePlayerDeck();
+        applyEquipmentEffects();
+        updatePlayerProfileUI();
+
+        showCharacterResult(character);
+        sfx("victory");
+        logMessage(`Personagem criado: ${char.name} (${clan.name}). Jutsu principal: ${char.signature.name}.`);
+    }
+
+    function showCharacterResult(character) {
+        if (ccEls.creator) ccEls.creator.hidden = true;
+        if (!ccEls.result) return;
+        ccEls.result.hidden = false;
+        ccEls.result.innerHTML = `
+            <div class="cc-result-card" style="--char-color:${character.color}">
+                <h2>${character.name}</h2>
+                <div class="cc-char-title">${character.title} · ${character.clanName}</div>
+                <div class="cc-result-stats">
+                    ${Object.keys(CC.ATTRIBUTE_DEFS).map((k) =>
+                        `<span>${CC.ATTRIBUTE_DEFS[k].icon} ${character.attributes[k]}</span>`
+                    ).join("")}
+                </div>
+                <div class="cc-result-derived">
+                    <span>Vida ${character.derived.maxHealth}</span>
+                    <span>Chakra ${character.derived.maxChakra}</span>
+                    <span>Desvio ${Math.round(character.derived.dodgeChance * 100)}%</span>
+                </div>
+                <button id="cc-recreate" class="game-button">Criar outro personagem</button>
+                <button id="cc-goto-combat" class="game-button">Ir para Combate</button>
+            </div>
+        `;
+        const recreate = document.getElementById("cc-recreate");
+        if (recreate) recreate.addEventListener("click", () => {
+            ccEls.result.hidden = true;
+            ccEls.result.innerHTML = "";
+            if (ccEls.creator) ccEls.creator.hidden = false;
+            CC.reset();
+            ccRender();
+        });
+        const goCombat = document.getElementById("cc-goto-combat");
+        if (goCombat) goCombat.addEventListener("click", () => {
+            const btn = document.getElementById("nav-combat");
+            if (btn) btn.click();
+        });
+    }
+
+    function openCharacterCreation() {
+        const created = CC.getCreated();
+        if (created) {
+            showCharacterResult(created);
+        } else {
+            if (ccEls.creator) ccEls.creator.hidden = false;
+            CC.reset();
+            ccRender();
+        }
+    }
+
+    if (ccEls.backBtn) ccEls.backBtn.addEventListener("click", ccBack);
+    if (ccEls.nextBtn) ccEls.nextBtn.addEventListener("click", ccAdvance);
+
     // --- Lógica de Navegação entre Abas ---
     const navButtons = document.querySelectorAll(".nav-button[id^='nav-']:not(.nav-link):not(.sound-btn)");
     const gameSections = document.querySelectorAll(".game-section");
@@ -1140,6 +1570,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 targetSection.classList.add("active-section");
                 // Carrega conteúdo dinâmico da aba
                 if (targetSectionId === "inventory-area") displayInventory();
+                if (targetSectionId === "character-area") openCharacterCreation();
                 if (targetSectionId === "shop-area") displayShop();
                 if (targetSectionId === "equipment-area") displayEquipment();
                 if (targetSectionId === "craft-area") displayCrafting();
@@ -1156,14 +1587,19 @@ document.addEventListener("DOMContentLoaded", () => {
         battleState.gamePhase = "player_turn";
 
         // Resetar e configurar jogador
-        battleState.player.maxHealth = 100; // Base
+        const createdChar = CC.getCreated();
+        const baseStats = createdChar ? createdChar.derived : null;
+        battleState.player.maxHealth = baseStats ? baseStats.maxHealth : 100; // Base
         battleState.player.health = battleState.player.maxHealth;
-        battleState.player.maxChakra = 50; // Base
+        battleState.player.maxChakra = baseStats ? baseStats.maxChakra : 50; // Base
         battleState.player.chakra = battleState.player.maxChakra;
         battleState.player.defense = 0;
         battleState.player.defensePercent = 0;
-        battleState.player.attackBoost = 0;
-        battleState.player.critChanceBoost = 0;
+        battleState.player.attackBoost = baseStats ? baseStats.attackBonus : 0;
+        battleState.player.critChanceBoost = baseStats ? (baseStats.critChance - 0.05) : 0;
+        battleState.player.dodgeChance = baseStats ? baseStats.dodgeChance : 0.10;
+        battleState.player.accuracy = baseStats ? baseStats.accuracy : 0.85;
+        battleState.player.character = createdChar ? createdChar.name : "Você";
         battleState.player.statusEffects = [];
         battleState.player.deck = [...playerProfile.deck];
         shuffleArray(battleState.player.deck);
