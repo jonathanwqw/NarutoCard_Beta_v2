@@ -1,7 +1,0 @@
-services:
-  - type: web
-    name: naruto-card
-    runtime: static
-    buildCommand: npm run build
-    staticPublishPath: ./dist
-    autoDeploy: true

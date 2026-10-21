@@ -15,6 +15,7 @@
 import { createServer } from "node:http";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { spawn } from "node:child_process";
 import path from "node:path";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -69,7 +70,22 @@ const server = createServer((request, response) => {
     response.end(readFileSync(file));
 });
 
+/** Abre o navegador padrão (melhor esforço: falha silenciosa em servidor headless). */
+function openBrowser(url) {
+    const command = process.platform === "win32" ? "cmd" : process.platform === "darwin" ? "open" : "xdg-open";
+    const args = process.platform === "win32" ? ["/c", "start", "", url] : [url];
+    try {
+        const child = spawn(command, args, { stdio: "ignore", detached: true });
+        child.on("error", () => {});
+        child.unref();
+    } catch {
+        /* sem navegador disponível: tudo bem */
+    }
+}
+
 server.listen(PORT, HOST, () => {
-    console.log(`\n  Naruto Card (dev) rodando em http://localhost:${PORT}`);
-    console.log(`  Modo: local e offline — sem servidor de jogo, sem online.\n`);
+    const url = `http://localhost:${PORT}`;
+    console.log(`\n  Naruto Card rodando em ${url}`);
+    console.log("  Modo: local e offline — o jogo inteiro fica nesta pasta, sem internet.\n");
+    if (process.env.NO_OPEN !== "1") openBrowser(url);
 });

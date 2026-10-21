@@ -5,14 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Naruto Card Game</title>
     <meta name="description" content="Naruto Pixel Card Game — versão local e estática, sem modo online.">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles/base.css">
     <link rel="stylesheet" href="styles/menu.css">
     <link rel="stylesheet" href="styles/battle.css">
 </head>
 <body>
+    <script>
+        // O jogo usa módulos ES, que o navegador bloqueia em file://.
+        // Quando aberto direto pelo explorer, mostramos como rodar local.
+        if (location.protocol === "file:") {
+            document.addEventListener("DOMContentLoaded", function () {
+                document.body.innerHTML = '<div class="aviso-offline">'
+                    + '<h1>Naruto Card</h1>'
+                    + '<p>Este jogo roda em um servidor local (nada de internet).</p>'
+                    + '<p>Rode <code>npm run dev</code> na pasta do projeto e abra '
+                    + '<code>http://localhost:4173</code> &mdash; ou dê dois cliques em '
+                    + '<code>iniciar-jogo.bat</code> (Windows) / <code>iniciar-jogo.sh</code> (Linux/Mac).</p>'
+                    + '</div>';
+            });
+        }
+    </script>
     <nav id="top-nav">
         <button id="nav-character" class="nav-button active">Personagem</button>
         <button id="nav-deck" class="nav-button">Deck</button>

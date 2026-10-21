@@ -1,8 +1,9 @@
 # AGENTS.md — regras para quem mexe neste projeto
 
-Objetivo do repositório: **jogo de cartas local e estático**. Sem online, sem
-backend, sem dependências externas. Se uma mudança introduzir rede, servidor
-de partida ou matchmaking, ela está fora do escopo.
+Objetivo do repositório: **jogo de cartas local**, que roda só nesta pasta,
+offline. Sem online, sem backend, sem deploy, sem dependências externas. Se uma
+mudança introduzir rede, servidor de partida, matchmaking, CDN ou chamada
+externa, ela está fora do escopo.
 
 ## Antes de tocar em qualquer coisa
 
@@ -65,7 +66,13 @@ gerar `dist/`.
 6. Se o efeito é de equipamento, use `equip_effect` e registre o handler em
    `src/core/equipment.js`.
 
-## Deploy
+## Execução local
 
-`render.yaml` publica `dist/` (site estático). O `buildCommand` é
-`npm run build` — nunca publique a raiz do repositório, e sim `dist/`.
+O projeto é servido localmente e nada mais:
+
+- `npm run dev` (ou `iniciar-jogo.bat` / `iniciar-jogo.sh`) sobe o servidor em
+  `http://localhost:4173` e abre o navegador.
+- `npm run build` gera a pasta `dist/` — a versão final do jogo, para copiar
+  para outro computador (é só servir `dist/` na raiz de um site estático).
+- Sem CDN, sem fonte externa, sem chamada de rede: qualquer recurso visual
+  (arte, som, fonte) precisa estar dentro da pasta do projeto.

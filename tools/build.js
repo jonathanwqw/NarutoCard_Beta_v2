@@ -60,7 +60,7 @@ function main() {
     console.log(`  dist/index.html          (menu principal)`);
     console.log(`  dist/pages/battle.html   (combate)`);
     console.log(`  ${countFiles(DIST)} arquivos no total`);
-    console.log("\n  Sirva com: npm run dev  (ou publique a pasta dist/)");
+    console.log("\n  Sirva localmente com: npm run dev  (ou copie a pasta dist/ para outro PC)");
 }
 
 main();

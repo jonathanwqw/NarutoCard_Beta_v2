@@ -1,32 +1,42 @@
-# Naruto Card (v2) — site estático e local
+# Naruto Card (v2) — jogo local, 100% offline
 
 Jogo de cartas estilo Naruto com criação de personagem, loja, craft, baús e
-combate. **Versão 100% local:** não existe servidor de jogo, matchmaking,
-Socket.IO nem dependência de rede — tudo roda no navegador e o progresso
-fica no `localStorage` do jogador.
+combate. **Roda só na sua máquina:** não existe servidor de jogo, matchmaking,
+Socket.IO, CDN ou qualquer chamada de rede. O jogo inteiro vive nesta pasta e
+o progresso fica no `localStorage` do navegador.
 
-## Rodar localmente
+## Como jogar (do jeito mais fácil)
 
-```bash
-npm run dev      # http://localhost:4173
-```
+| Sistema | O que fazer |
+| --- | --- |
+| Windows | dê dois cliques em `iniciar-jogo.bat` |
+| Linux / macOS | `./iniciar-jogo.sh` (ou `bash iniciar-jogo.sh`) |
+| Qualquer um | `npm run dev` |
 
-Sem dependências: o projeto usa apenas Node (>= 18) para as ferramentas.
-`npm install` não instala nada.
+O script sobe o servidor local em **http://localhost:4173** e abre o navegador
+sozinho. Para fechar, basta encerrar a janela/terminal.
+
+> Abra sempre por `http://localhost:4173`. Abrir o `index.html` direto pelo
+> explorer não funciona: o navegador bloqueia módulos ES em `file://` (a tela
+> explica isso se acontecer).
 
 ## Scripts
 
 | Script | O que faz |
 | --- | --- |
-| `npm run dev` | Servidor estático de desenvolvimento (espelha o layout do build) |
-| `npm run build` | Gera `dist/` (roda arte + validador antes) — é o que o Render publica |
+| `npm run dev` | Servidor estático local (abre o navegador) |
+| `npm run build` | Gera `dist/` (roda arte + validador antes) — a pasta final do jogo |
 | `npm run art` | Gera a arte SVG procedural de todas as cartas em `assets/cards/` |
 | `npm run validate` | Valida dados, efeitos, arte e personagens (falha se algo ficar "sem designer") |
 | `npm test` | Suíte de testes do motor, dos dados e da UI (`node --test`) |
 
-## Estrutura
+Sem dependências: o projeto usa apenas Node (>= 18) para as ferramentas.
+`npm install` não instala nada.
+
+## Estrutura da pasta
 
 ```
+iniciar-jogo.bat / .sh    atalho: sobe o servidor local e abre o navegador
 src/
   index.html          página do menu (criação de personagem, loja, deck, inventário…)
   pages/battle.html   página de combate
@@ -49,7 +59,11 @@ src/
 assets/cards/         81 artes SVG geradas (uma por carta) + fusion.svg
 tools/                build.js  serve.js  generate-art.js  validate.js
 tests/                engine.test.js  ui.test.js
+dist/                 (opcional) saída do `npm run build`
 ```
+
+Copie a pasta inteira para outro computador e o jogo continua funcionando —
+não há banco de dados, servidor nem instalação.
 
 ## Regras do projeto (resumo)
 
@@ -63,26 +77,5 @@ tests/                engine.test.js  ui.test.js
 4. **Motor sem DOM.** Regras de combate vivem em `src/core/engine.js`; a UI
    só desenha. Efeitos usam o contexto (`draw`, `heal`, `addStatus`…) e nunca
    tocam no HTML.
-5. **Modo offline.** Proibido adicionar dependência de rede, WebSocket ou
-   backend ao projeto. O estado do jogador é local.
-
-## Deploy (Render — site estático)
-
-O `render.yaml` já está configurado:
-
-```yaml
-services:
-  - type: web
-    runtime: static
-    buildCommand: npm run build
-    staticPublishPath: ./dist
-```
-
-1. Suba a branch para o GitHub e conecte o repositório no Render como
-   *Static Site*.
-2. O Render executa `npm run build` e publica a pasta `dist/`.
-3. `npm run build` roda o validador: se qualquer carta ficar sem arte ou sem
-   efeito, o deploy falha.
-
-Para publicar em outro lugar (GitHub Pages, Netlify, nginx), basta servir a
-pasta `dist/` na raiz do site.
+5. **Modo offline.** Proibido adicionar dependência de rede, WebSocket,
+   backend ou CDN ao projeto. O estado do jogador é local.

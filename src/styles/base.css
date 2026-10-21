@@ -8,14 +8,13 @@
    ============================================================ */
 
 /* --- Fonte pixel do jogo (deve vir antes de qualquer regra) --- */
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
 /* ============================================================
    TOKENS / VARIÁVEIS CSS
    ============================================================ */
 :root {
   /* --- Tipografia --- */
-  --font-pixel: 'Press Start 2P', 'Courier New', Courier, monospace;
+  --font-pixel: 'Press Start 2P', 'Lucida Console', 'Courier New', Courier, monospace;
   --font-mono: 'Courier New', Courier, monospace;
 
   /* --- Escala única de cartas (todos os tamanhos derivam daqui) --- */
@@ -678,4 +677,35 @@ h1 {
 @keyframes fade-in-up {
   0% { opacity: 0; transform: translateY(8px); }
   100% { opacity: 1; transform: translateY(0); }
+}
+
+/* ------------------------------------------------------ aviso de file:// */
+.aviso-offline {
+    max-width: 640px;
+    margin: 80px auto;
+    padding: 28px;
+    text-align: center;
+    color: var(--text);
+    background: var(--bg-panel);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+}
+
+.aviso-offline h1 {
+    font-family: var(--font-pixel);
+    font-size: 20px;
+    margin-bottom: 18px;
+}
+
+.aviso-offline p {
+    line-height: 1.7;
+    margin-bottom: 12px;
+}
+
+.aviso-offline code {
+    background: var(--bg-dark);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-family: var(--font-mono);
 }
